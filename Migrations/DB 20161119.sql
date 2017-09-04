@@ -1,0 +1,1 @@
+ALTER TABLE `sampling_plans` ADD `skipped` TINYINT(1) NOT NULL AFTER `skipable`;
