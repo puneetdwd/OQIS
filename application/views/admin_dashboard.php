@@ -42,6 +42,26 @@
             </div>    
         </div>    
     </div>
+	
+	 <div class="row dashboard-progress-section">
+        <div class="col-md-12">
+            <div class="mt-element-ribbon bg-grey-steel">
+                <div class="">
+                    <div class="col-md-1 col-md-offset-11" style="margin-top: -10px;">
+                        <!--<a class="button normals btn-circle" href="<?php echo base_url()."sampling/create_sampling_plan/".$this->session->userdata('dashboard_date').'/dashboard'; ?>">
+                            <i class="fa fa-refresh"></i> Refresh
+                        </a>-->
+                    </div>
+                </div>
+                <div class="ribbon ribbon-clip ribbon-color-danger">
+                    <div class="ribbon-sub ribbon-clip"></div> <?php echo date('jS M, Y', strtotime($this->session->userdata('dashboard_date'))); ?>'s PROGRESS 
+                </div>
+                <div class="ribbon-content text-center">
+                    <img src="<?php echo base_url(); ?>assets/global/img/loading-spinner-grey.gif" alt="" class="loading"> Loading Progress
+                </div>
+            </div>
+        </div>
+    </div>
     
     <?php if(!empty($on_holds) || !empty($on_going)) { ?>
         <div class="row">
@@ -241,6 +261,93 @@
             </div>
         </div>
     <?php } ?>
+	<?php 
+	//print_r($regular_counts);
+	if(!empty($inprocess_insp_counts)) { ?>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="mt-element-ribbon bg-grey-steel">
+                    <div class="ribbon ribbon-clip ribbon-color-danger uppercase">
+                        <div class="ribbon-sub ribbon-clip"></div> User wise In-Process Inspection Counts
+                    </div>
+                    
+                    <div class="ribbon-content">
+                        <table class="table table-hover table-light">
+                            <thead>
+                                <tr>
+                                    <th>Inspector</th>
+                                    <th>Regular</th>
+                                    <th>Interval</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach($inprocess_insp_counts as $inprocess_insp_count) { ?>
+                                    <tr>
+                                        <td><?php echo $inprocess_insp_count['first_name'].' '.$inprocess_insp_count['last_name']; ?></td>
+                                        <td><?php echo $inprocess_insp_count['regular_inprogress_count']; ?></td>
+                                        <td><?php echo $inprocess_insp_count['interval_inprogress_count']; ?></td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php } ?>
+    <?php if(!empty($pending_counts)) { ?>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="mt-element-ribbon bg-grey-steel">
+                    <div class="ribbon ribbon-clip ribbon-color-danger uppercase">
+                        <div class="ribbon-sub ribbon-clip"></div> Pending Inspection Count
+                    </div>                    
+                    <div class="ribbon-content">
+                        <table class="table table-hover table-light">
+                            <thead>
+                                <tr>
+                                    <th>Inspection</th>
+                                    <th>Regular Inspection</th>
+                                    <th>Interval Inspection</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+								<?php foreach($pending_counts as $inspection_id => $pending_count) { ?>
+									<tr>
+										<?php 
+											$total = 0;
+											foreach($pending_count as $k => $r) { 
+												$total += $r;
+											} 
+										?>	
+										<td><?php echo $pending_count['inspection_name']; ?></td>
+										<td>
+											<?php 
+											if($pending_count['insp_type'] == 'Regular') {
+												echo $total; 
+											}
+											else
+												echo "NA";
+											?>
+										</td>
+										<td>
+											<?php 
+											if($pending_count['insp_type'] == 'Interval') {
+												echo $total; 
+											}
+											else
+												echo "NA";
+											?>
+										</td>
+									</tr>
+								<?php } ?>
+							</tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php } ?>
     
     <?php if(!empty($abort_requests)) { ?>
         <div class="row">
@@ -289,25 +396,7 @@
         </div>
     <?php } ?>
     
-    <div class="row dashboard-progress-section">
-        <div class="col-md-12">
-            <div class="mt-element-ribbon bg-grey-steel">
-                <div class="">
-                    <div class="col-md-1 col-md-offset-11" style="margin-top: -10px;">
-                        <!--<a class="button normals btn-circle" href="<?php echo base_url()."sampling/create_sampling_plan/".$this->session->userdata('dashboard_date').'/dashboard'; ?>">
-                            <i class="fa fa-refresh"></i> Refresh
-                        </a>-->
-                    </div>
-                </div>
-                <div class="ribbon ribbon-clip ribbon-color-danger">
-                    <div class="ribbon-sub ribbon-clip"></div> <?php echo date('jS M, Y', strtotime($this->session->userdata('dashboard_date'))); ?>'s PROGRESS 
-                </div>
-                <div class="ribbon-content text-center">
-                    <img src="<?php echo base_url(); ?>assets/global/img/loading-spinner-grey.gif" alt="" class="loading"> Loading Progress
-                </div>
-            </div>
-        </div>
-    </div>
+   
     
 </div>
 

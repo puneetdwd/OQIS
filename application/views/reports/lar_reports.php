@@ -53,7 +53,7 @@
                                     <?php } ?>
                                     
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label class="control-label">Date Range</label>
                                                 <div class="input-group date-picker input-daterange" data-date-format="yyyy-mm-dd">
@@ -66,8 +66,21 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        <div class="col-md-6">
+                                        <!--div class="col-md-4">
+                                            <div class="form-group" id="report-sel-model-error">
+                                                <label class="control-label">Select Inspection Type:</label>
+                                                <select name="insp-type" id="insp-type" class="form-control select2me"
+                                                    data-placeholder="Select Inspection Type" data-error-container="#report-sel-model-error">
+                                                    <option></option>
+													 <?php foreach($insp_type as $it) { ?>
+													<option value="<?php echo $it['type']; ?>" <?php if($it['type'] == $this->input->post('insp-type')) { ?> selected="selected" <?php } ?>>
+                                                            <?php echo $it['type']; ?>
+                                                    </option>
+													 <?php } ?>
+                                                </select>
+                                            </div>
+                                        </div-->
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label class="control-label">Report Type:
                                                 <span class="required"> * </span></label>

@@ -71,7 +71,7 @@
                                         <label class="control-label">Select Model.Suffix:
                                         <span class="required"> * </span></label>
                                                 
-                                        <select name="model_suffix" id="model-sel-by-tool" class="required form-control select2me"
+                                        <select multiple name="model_suffix[]" id="model-sel-by-tool" class="required form-control select2me"
                                             data-placeholder="Select Model.Suffix" data-error-container="#sampling-dashboard-model-error">
                                             <option value=""></option>
                                             <?php $sel_model_suffix = $this->input->post('model_suffix'); ?>

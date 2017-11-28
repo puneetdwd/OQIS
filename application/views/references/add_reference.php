@@ -17,7 +17,17 @@
         </ol>
         
     </div>
-
+<?php
+	/* $sel_model_suffix = (!empty($reference['model_suffix']) ? $reference['model_suffix'] : ''); 
+	$sel_model_suffix = explode(',',$sel_model_suffix);
+	print_r($sel_model_suffix);											
+	foreach($model_suffixs as $model_suffix) 
+	{
+		if(in_array($model_suffix['model'], $sel_model_suffix))
+			echo '12';
+	}		
+	exit; */										
+?>
     <div class="row">
         <div class="col-md-12">
         
@@ -107,12 +117,21 @@
                                         <label class="control-label">Select Model.Suffix:
                                         <span class="required"> * </span></label>
                                                 
-                                        <select name="model_suffix" id="model-sel-by-tool" class="required form-control select2me"
+                                        <select  multiple  name="model_suffix[]" id="model-sel-by-tool" class="required form-control select2me"
                                             data-placeholder="Select Model.Suffix" data-error-container="#add-reference-sel-model-error">
                                             <option value="All">All</option>
-                                            <?php $sel_model_suffix = (!empty($reference['model_suffix']) ? $reference['model_suffix'] : ''); ?>
-                                            <?php foreach($model_suffixs as $model_suffix) { ?>
+                                            <?php 
+												$sel_model_suffix = (!empty($reference['model_suffix']) ? $reference['model_suffix'] : ''); 
+												$sel_model_suffix = explode(',',$sel_model_suffix);
+												
+											?>
+                                            <?php /* foreach($model_suffixs as $model_suffix) { ?>
                                                 <option value="<?php echo $model_suffix['model']; ?>" <?php if($model_suffix['model'] == $sel_model_suffix) { ?> selected="selected" <?php } ?>>
+                                                    <?php echo $model_suffix['model']; ?>
+                                                </option>
+                                            <?php } */ ?>  
+											<?php foreach($model_suffixs as $model_suffix) { ?>
+                                                <option value="<?php echo $model_suffix['model']; ?>" <?php if(in_array($model_suffix['model'], $sel_model_suffix)) { ?> selected="selected" <?php } ?>>
                                                     <?php echo $model_suffix['model']; ?>
                                                 </option>
                                             <?php } ?>        

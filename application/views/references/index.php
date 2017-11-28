@@ -41,7 +41,12 @@
                         <a class="button normals btn-circle" href="<?php echo base_url()."references/add_reference"; ?>">
                             <i class="fa fa-plus"></i> Add New Reference Link
                         </a>
-                        <a class="button normals btn-circle" href="<?php echo base_url()."references/download_references"; ?>">
+						
+                        <!--.$product['id']-->
+						<a class="button normals btn-circle" href="<?php echo base_url()."references/upload_reference"; ?>">
+                            <i class="fa fa-plus"></i> Upload Reference Links
+                        </a>
+						<a class="button normals btn-circle" href="<?php echo base_url()."references/download_references"; ?>">
                             <i class="fa fa-download"></i> Download
                         </a>
                     </div>

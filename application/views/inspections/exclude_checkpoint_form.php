@@ -74,13 +74,17 @@
                                         <label class="control-label">Select Model.Suffix:
                                             <span class="required"> * </span>
                                         </label>
-                                                
-                                        <select name="model" class="form-control required select2me"
+										
+                                        <select multiple name="model[]" class="form-control required select2me"
                                             data-placeholder="Select Model.Suffix" data-error-container="#exclude-checkpoint-sel-model-error">
                                             <option></option>
-                                            <?php $sel_model_suffix = (!empty($excluded_checkpoint['model']) ? $excluded_checkpoint['model'] : ''); ?>
-                                            <?php foreach($model_suffixs as $model_suffix) { ?>
-                                                <option value="<?php echo $model_suffix['model_suffix']; ?>" <?php if($model_suffix['model_suffix'] == $sel_model_suffix) { ?> selected="selected" <?php } ?>>
+                                            <?php 
+												$sel_model_suffix = (!empty($excluded_checkpoint['model']) ? $excluded_checkpoint['model'] : ''); 
+												$sel_model_suffix = explode(',',$sel_model_suffix);
+												
+											?>
+											<?php foreach($model_suffixs as $model_suffix) { ?>
+                                                <option value="<?php echo $model_suffix['model_suffix']; ?>" <?php if(in_array($model_suffix['model_suffix'], $sel_model_suffix)) { ?> selected="selected" <?php } ?>>
                                                     <?php echo $model_suffix['model_suffix']; ?>
                                                 </option>
                                             <?php } ?>        

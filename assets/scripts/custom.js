@@ -1,5 +1,41 @@
  $(document).ready(function() {
 
+ 
+	//Start Inspection Name by inspection Type
+	$('#insp-type').change(function() {
+        
+        App.blockUI({
+            target: '.portlet',
+            boxed: true
+        }); 
+        
+        var insp_type = $('#insp-type :selected').val();
+        //alert(insp_type);exit;
+        $.ajax({
+            type: 'POST',
+            url: base_url+'inspections/get_inspection_by_type',
+            data: { insp_type: insp_type},
+            dataType: 'json',
+            success: function(resp) {
+                /* if($('#inspection_id :selected').val() != '') {
+					$('#inspection_id').select2('val', null);
+				} */
+                
+                $('#inspection_id').html('');
+                
+                $('#inspection_id').append('<option value=""></option>');
+                $.each(resp.inspections, function (i, item) {
+                    $('#inspection_id').append($('<option>', { 
+                        value: item.id,
+                        text : item.name, 
+                    }));
+                });
+               App.unblockUI('.portlet');
+            }
+        }); 
+    });
+	//End Inspection Name by inspection Type
+	
     var base_url = $('#base_url').val();
     
     $('.dashboard-progress-section').load(base_url+'dashboard/show_day_progress');
@@ -906,6 +942,8 @@ function mandatory_popup($links) {
             }
         }
     });
+	
+	
 }
 
 function show_page(page_no) {

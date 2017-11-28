@@ -110,6 +110,24 @@ class Product_model extends CI_Model {
         
         return $this->db->query($sql, array($product_id))->result_array();
     }
+    function get_tool($product_id,$tool) {
+        $sql = "SELECT * 
+        FROM model_suffixs
+        WHERE product_id = ?
+        AND is_deleted = 0
+        AND tool = ? ";
+        
+        return $this->db->query($sql, array($product_id,$tool))->result_array();
+    }
+	function get_suffix($product_id,$model_suffix) {
+        $sql = "SELECT * 
+        FROM model_suffixs
+        WHERE product_id = ?
+        AND is_deleted = 0
+        AND model_suffix = ? ";
+        
+        return $this->db->query($sql, array($product_id,$model_suffix))->result_array();
+    }
     
     function get_all_suffixs($product_id, $tool = '') {
         $sql = "SELECT DISTINCT model_suffix as model 

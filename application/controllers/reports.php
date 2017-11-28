@@ -13,7 +13,11 @@ class Reports extends Admin_Controller {
         $data = array();
         $this->load->model('Audit_model');
         $id = ($this->user_type == 'Audit') ? $this->id : '';
-        
+        $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+       
         $data['models'] = $this->Audit_model->get_all_audit_models();
         
         $this->load->model('Inspection_model');
@@ -22,11 +26,15 @@ class Reports extends Admin_Controller {
         
         if($this->input->post()) {
             $post_data = $this->input->post();
+			$model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
             if($this->product_id) {
                 $post_data['product_id'] = $this->product_id;
             }
-            
-            $audits = $this->Audit_model->get_grouped_audit_with_plan($post_data, '');
+			$_SESSION['report_filters'] = $post_data;
+              
+           $audits = $this->Audit_model->get_grouped_audit_with_plan($post_data, '');
+		   // echo $this->db->last_query();exit;
             $audits = array_merge($audits, $this->Audit_model->get_grouped_audit_with_plan($post_data, '', false, 'tool'));
             $data['audits'] = $audits;
         }
@@ -42,15 +50,26 @@ class Reports extends Admin_Controller {
         
         $this->load->model('Inspection_model');
         $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
-        
+        $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+       
         if($this->input->post()) {
+			
             $post_data = $this->input->post();
-            $start_range = $post_data['start_range'];
+			
+			$_SESSION['pending'] = $post_data;
+            
+			$start_range = $post_data['start_range'];
             $end_range = $post_data['end_range'];
             $inspection_id = $post_data['inspection_id'];
+            $insp_type = $post_data['insp-type'];
 
             $this->load->model('Report_model');
-            $counts = $this->Report_model->get_pending_audits_count($start_range, $end_range, $this->product_id, $inspection_id);
+            $counts = $this->Report_model->get_pending_audits_count_new($start_range, $end_range,$insp_type, $this->product_id, $inspection_id);
+			//echo '<pre>';print_r($counts);exit;
+           
             //echo "<pre>";echo $this->db->last_query();exit;
             $days = $this->get_days_for_range($start_range, $end_range);
             $days = array_fill_keys(($days), '-');
@@ -114,17 +133,26 @@ class Reports extends Admin_Controller {
         $this->load->model('Audit_model');
         $data['models'] = $this->Audit_model->get_all_audit_models();
         $data['workorders'] = $this->Audit_model->get_all_audit_workorders();
-        
         $this->load->model('Product_model');
         $data['tools'] = $this->Product_model->get_all_tools($this->product_id);
         $data['lines'] = $this->Product_model->get_all_product_lines($this->product_id);
-        
+        $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+       
+        $this->load->model('Inspection_model');
+        $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
+       
         $filters = $this->input->post() ? $this->input->post() : array();
         $filters = array_filter($filters);
         $data['page_no'] = 1;
+            
         if(count($filters) > 1) {
             $filters['gmes_sent'] = 0;
-
+			$model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
+        
             $per_page = 25;
             $page_no = $this->input->post('page_no');
             
@@ -134,9 +162,9 @@ class Reports extends Admin_Controller {
             
             $count = $this->Audit_model->get_completed_audits($filters, true);
             $count = $count[0]['c'];
-            $data['total_page'] = ceil($count/50);
-            
-            $data['audits'] = $this->Audit_model->get_completed_audits($filters, false, $limit);
+            $data['total_page'] = ceil($count/50); 
+            $_SESSION['gmes_report_filter'] = $filters;
+            $data['audits'] = $this->Audit_model->get_completed_audits_new($filters, false);
         }
         
         $this->template->write('title', 'OQIS | GMES Integration');
@@ -145,10 +173,19 @@ class Reports extends Admin_Controller {
     }
     
     public function edit() {
+		
         $data = array();
         $this->load->model('Audit_model');
         $data['models'] = $this->Audit_model->get_all_audit_models();
         $data['workorders'] = $this->Audit_model->get_all_audit_workorders();
+		$data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+       
+        $this->load->model('Inspection_model');
+        $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
+        //echo $this->db->last_query();exit;
         $data['serial_nos'] = array();
         
         $this->load->model('Product_model');
@@ -157,24 +194,29 @@ class Reports extends Admin_Controller {
         
         $filters = $this->input->post() ? $this->input->post() : array();
         $filters = array_filter($filters);
+		
+		$_SESSION['edit'] = $filters;
+			
         $data['page_no'] = 1;
         if(count($filters) > 1) {
             //$filters = $this->input->post();
-            
+            $model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
             $per_page = 25;
             $page_no = $this->input->post('page_no');
             
             $limit = 'LIMIT '.($page_no-1)*$per_page.' ,'.$per_page;
             
             $data['page_no'] = $page_no;
-            
-            $count = $this->Audit_model->get_completed_audits($filters, true);
+            //echo "123";exit;
+            $count = $this->Audit_model->get_completed_audits_new($filters, true);
             $count = $count[0]['c'];
             $data['total_page'] = ceil($count/50);
-            
-            $data['audits'] = $this->Audit_model->get_completed_audits($filters, false, $limit);
+            //echo "456";exit;
+            $data['audits'] = $this->Audit_model->get_completed_audits_new($filters, false);
         }
         
+           // print_r($data['audits']); exit;      
         $this->template->write('title', 'OQIS | GMES Integration');
         $this->template->write_view('content', 'reports/edit', $data);
         $this->template->render();
@@ -436,13 +478,18 @@ class Reports extends Admin_Controller {
     public function lar_report() {
         //echo "<pre>";print_r($_SESSION);exit;
         $data = array();
-        
-        if($this->input->post()) {
+        /* $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+         */
+		if($this->input->post()) {
             $post_data = $this->input->post();
             $start_range = $post_data['start_range'];
             $end_range = $post_data['end_range'];
+//            $insp_type = $post_data['insp-type'];
             $type = $post_data['type'];
-            
+            //print_r($post_data);exit;
             if($type == 'Dialy') {
                 $months = $this->get_days_for_range($start_range, $end_range);
                 $months = array_fill_keys(($months), '-');
@@ -450,7 +497,8 @@ class Reports extends Admin_Controller {
                 $months = $this->get_months_from_range($start_range, $end_range);
                 $months = array_fill_keys(($months), '-');
             }
-            
+           
+        
             $this->load->model('Report_model');
             if(!$this->session->userdata('is_super_admin')) {
                 $raw_data = $this->Report_model->get_monthly_lot_qty($start_range, $end_range, $this->product_id, $type);
@@ -618,7 +666,10 @@ class Reports extends Admin_Controller {
         $data = array();
         $this->load->model('Audit_model');
         $data['models'] = $this->Audit_model->get_all_audit_models();
-        
+        $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
         $this->load->model('Inspection_model');
         if($this->product_id) {
             $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
@@ -630,32 +681,93 @@ class Reports extends Admin_Controller {
         
         if($this->input->post()) {
             $post_data = $this->input->post();
+			$model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
+            
             $start_range = $post_data['start_range'];
             $end_range = $post_data['end_range'];
             if($this->product_id) {
                 $post_data['product_id'] = $this->product_id;
             }
+            $_SESSION['serial_nos'] = $post_data;
             
             $this->load->model('Report_model');
-            $data['serial_nos'] = $this->Report_model->get_serial_no_report($start_range, $end_range, $post_data);
+            $data['serial_nos'] = $this->Report_model->get_serial_no_report_new($start_range, $end_range, $post_data);
+			
         }
-
+		//echo $this->db->last_query();exit;
         $this->template->write('title', 'OQIS | Serial Number');
         $this->template->write_view('content', 'reports/serial_nos_reports', $data);
         $this->template->render();
     }
     
     public function mpat_status() {
-        $this->load->model('Audit_model');
-        $data['audits'] = $this->Audit_model->get_all_running_audits('interval');
-
+        $this->load->model('Inspection_model');
+		
+		$this->load->model('Audit_model');
+		$data['models'] = $this->Audit_model->get_all_audit_models();
+        $data['workorders'] = $this->Audit_model->get_all_audit_workorders();
+		$data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+        $this->load->model('Product_model');
+        $data['tools'] = $this->Product_model->get_all_tools($this->product_id);
+        $data['lines'] = $this->Product_model->get_all_product_lines($this->product_id);
+        
+        $filters = $this->input->post() ? $this->input->post() : array();
+        $filters = array_filter($filters);
+        $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
+        if(count($filters) > 1) {
+			$_SESSION['mpat_status_filters'] = $filters;
+			$model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
+            
+			//$data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, 1,strtolower($filters['insp-type']));
+        
+			$data['audits'] = $this->Audit_model->get_all_running_audits($filters);
+		}
+		 // echo $this->db->last_query();exit;//'<pre>';print_r($data);exit;
         $this->template->write('title', 'OQIS | MPAT Inspection Status');
         $this->template->write_view('content', 'reports/mpat_status', $data);
         $this->template->render();
     }
+    public function consolidated_report() {
+		$this->load->model('Inspection_model');
+        
+        $this->load->model('Audit_model');
+		$data['models'] = $this->Audit_model->get_all_audit_models();
+	    $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+        $this->load->model('Product_model');
+        $data['tools'] = $this->Product_model->get_all_tools($this->product_id);
+        $data['lines'] = $this->Product_model->get_all_product_lines($this->product_id);
+        
+        $filters = $this->input->post() ? $this->input->post() : array();
+        $filters = array_filter($filters);
+        $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
+        //$data['page_no'] = 1;
+		
+		//Array ( [page_no] => 1 [start_range] => 2017-10-20 [end_range] => 2017-10-20 [type] => Regular [model_suffix] => 40LF6300-TA.ATRJLJL [tool] => LW60B [line_id] => 4 [workorder] => 652L0879 )
+		
+		//print_r($filters);exit;
+        if(count($filters) > 1) {
+			$_SESSION['consolidated_report_filters'] = $filters;
+            
+			$data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, 1,strtolower($filters['insp-type']));
+        
+			$data['audits'] = $this->Audit_model->get_consolidated_report($filters);
+			// echo $this->db->last_query();exit;
+		}
+		$this->template->write('title', 'OQIS | Consolidated Report for Regular & Interval Inspection');
+        $this->template->write_view('content', 'reports/consolidated_report', $data);
+        $this->template->render();
+    }
     
     public function completed_inspections() {
-        if(!$this->session->userdata('is_super_admin')) {
+        /* if(!$this->session->userdata('is_super_admin')) {
             $this->load->model('Product_model');
             $product = $this->Product_model->get_product($this->product_id);
             
@@ -663,21 +775,29 @@ class Reports extends Admin_Controller {
                 $this->session->set_flashdata('error', 'Access Denied.');
                 redirect(base_url());
             }
-        }
+        } */
         
         $data = array();
 
         $this->load->model('Inspection_model');
         $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
-
+        $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+    
         if($this->input->post()) {
             $post_data = $this->input->post();
             $start_range = $post_data['start_range'];
             $end_range = $post_data['end_range'];
             $inspection_id = $post_data['inspection_id'];
+            $insp_type = $post_data['insp-type'];
             
+			$_SESSION['completed_report_filters'] = $post_data;
+			
             $this->load->model('Report_model');
-            $data['audits'] = $this->Report_model->get_day_completed_inspection($start_range, $end_range, $this->product_id, $inspection_id);
+            $data['audits'] = $this->Report_model->get_day_completed_inspection_new($start_range, $end_range,$insp_type, $this->product_id, $inspection_id);
+			//echo $this->db->last_query();exit;
         }
         
         $this->template->write('title', 'OQIS | Completed Inspections');
@@ -688,17 +808,19 @@ class Reports extends Admin_Controller {
     public function completed_inspection_details() {
         $data = array();
 
-        if(!$this->session->userdata('is_super_admin')) {
             $this->load->model('Product_model');
             $product = $this->Product_model->get_product($this->product_id);
-            
+        /* if(!$this->session->userdata('is_super_admin')) {
+            $product = $this->Product_model->get_product($this->product_id);
+            // print_r( $product);echo $this->id;exit;
             if($this->id != $product['checked_by'] && $this->id != $product['approved_by']) {
                 $this->session->set_flashdata('error', 'Access Denied.');
                 redirect(base_url());
             }
             
             $data['product'] = $product;
-        }
+        } */
+            $data['product'] = $product;
         
         $this->load->model('Inspection_model');
         $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
@@ -996,4 +1118,159 @@ class Reports extends Admin_Controller {
         //force user to download the Excel file without writing it to server's HD
         $objWriter->save('php://output');
     }
+	
+	public function export_excel($excel_page, $filters = array()) {
+        $data = array();
+        // echo $excel_page;exit;
+        //$filters = unserialize($filters);
+        $this->load->model('Audit_model');
+        if($excel_page == 'mpat_status'){
+            $filters = @$_SESSION['mpat_status_filters'] ;
+            $data['audits'] = $this->Audit_model->get_all_running_audits($filters);
+			$data['export'] = true;
+			//echo "<pre>";print_r($data);
+            $str = $this->load->view('excel_pages/mpat_status', $data, true);
+            //exit;
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=mpat_status_Report.xls');
+            
+        }else if($excel_page == 'consolidated_report'){
+            $filters = @$_SESSION['consolidated_report_filters'] ;
+            $data['audits'] = $this->Audit_model->get_consolidated_report($filters);
+			$data['export'] = true;
+			//echo "<pre>";print_r($data);
+            $str = $this->load->view('excel_pages/consolidated_report', $data, true);
+            //exit;
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=consolidated_Report.xls');
+            
+        }else if($excel_page == 'report'){
+            $post_data = @$_SESSION['report_filters'] ;
+            $audits = $this->Audit_model->get_grouped_audit_with_plan($post_data, '');
+            $audits = array_merge($audits, $this->Audit_model->get_grouped_audit_with_plan($post_data, '', false, 'tool'));
+            $data['audits'] = $audits;$data['export'] = true;
+			$str = $this->load->view('excel_pages/reports', $data, true);
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=Report.xls');
+        }else if($excel_page == 'serial_nos'){
+            $post_data = @$_SESSION['serial_nos'] ;
+			$start_range = $post_data['start_range'];
+            $end_range = $post_data['end_range'];
+            if($this->product_id) {
+                $post_data['product_id'] = $this->product_id;
+            }
+            //print_r($post_data);exit;
+            $this->load->model('Report_model');
+            $data['serial_nos'] = $this->Report_model->get_serial_no_report_new($start_range, $end_range, $post_data);
+			$data['export'] = true;
+			$str = $this->load->view('excel_pages/serial_nos_reports', $data, true);
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=serial_nos.xls');
+       
+	    }else if($excel_page == 'edit'){
+            $post_data = @$_SESSION['edit'] ;
+			
+			$data['audits'] = $this->Audit_model->get_completed_audits_new($post_data, false);
+     
+			$data['export'] = true;
+			$str = $this->load->view('excel_pages/edit', $data, true);
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=edit.xls');
+        
+		}else if($excel_page == 'gmes_report'){
+            $filters = $_SESSION['gmes_report_filter'];
+            
+            $per_page = 25;
+            $page_no = $this->input->post('page_no');
+            
+            $limit = 'LIMIT '.($page_no-1)*$per_page.' ,'.$per_page;
+            
+            $data['page_no'] = $page_no;
+            
+            $count = $this->Audit_model->get_completed_audits($filters, true);
+            $count = $count[0]['c'];
+            $data['total_page'] = ceil($count/50); 
+            $data['audits'] = $this->Audit_model->get_completed_audits_new($filters, false);
+			$data['export'] = true;
+			$str = $this->load->view('excel_pages/gmes', $data, true);
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=gmes.xls');
+        
+		}else if($excel_page == 'completed_report'){
+			$post_data = $_SESSION['completed_report_filters'];
+            $start_range = $post_data['start_range'];
+            $end_range = $post_data['end_range'];
+            $inspection_id = $post_data['inspection_id'];
+            $insp_type = $post_data['insp-type'];
+            $this->load->model('Report_model');
+            $data['audits'] = $this->Report_model->get_day_completed_inspection_new($start_range, $end_range,$insp_type, $this->product_id, $inspection_id);
+			$data['export'] = true;
+			$str = $this->load->view('excel_pages/completed_inspections', $data, true);
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=completed_inspections.xls');
+        
+		}else if($excel_page == 'audit_checkpoints'){
+			$filters = $_SESSION['audit_checkpoints_filters'];
+			$this->load->model('Audit_model');
+            $data['audit_checkpoints'] = $this->Audit_model->pending_checkpoints_new($filters , $this->product_id);
+
+			$data['export'] = true;
+			$str = $this->load->view('excel_pages/na_checkpoints', $data, true);
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=na_checkpoints.xls');
+        
+		}else if($excel_page == 'pending'){
+            $post_data = @$_SESSION['pending'] ;
+			
+			$start_range = $post_data['start_range'];
+            $end_range = $post_data['end_range'];
+            $inspection_id = $post_data['inspection_id'];
+            $insp_type = $post_data['insp-type'];
+
+            $this->load->model('Report_model');
+            $counts = $this->Report_model->get_pending_audits_count_new($start_range, $end_range,$insp_type, $this->product_id, $inspection_id);
+			//echo '<pre>';print_r($counts);exit;
+           
+            //echo "<pre>";echo $this->db->last_query();exit;
+            $days = $this->get_days_for_range($start_range, $end_range);
+            $days = array_fill_keys(($days), '-');
+            $data['days'] = $days;
+            
+            $reports = array();
+            $totals = array_merge(array('Total' => 'Total'), $days);
+            foreach($counts as $count) {
+                if(!isset($reports[$count['inspection_id']])) {
+                    $reports[$count['inspection_id']] = array_merge(array('inspection_name' => $count['inspection_name']), $days);
+                }
+                
+                $pending = $count['samples']-$count['total_audits'];
+                $reports[$count['inspection_id']][$count['sampling_date']] = ($pending < 0) ? 0 : $pending;
+                
+                $totals[$count['sampling_date']] += $pending;
+            }
+            
+            $reports[] = $totals;
+            $data['reports'] = $reports;
+            
+            //echo "<pre>";print_r($reports);exit;
+        
+        
+			
+			$data['export'] = true;
+			$str = $this->load->view('excel_pages/pending', $data, true);
+            header('Content-Type: application/force-download; charset=utf-8');
+            header('Content-disposition: attachment; filename=pending.xls');
+        }
+		else{
+            return 0;
+			
+      	
+        }
+        
+        // Fix for crappy IE bug in download.
+        header("Pragma: ");
+        header("Cache-Control: ");
+        echo $str;
+    }
+    
 }

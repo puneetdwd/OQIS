@@ -129,13 +129,17 @@
                                             <div class="form-group" id="inspection-config-sel-model-error">
                                                 <label class="control-label">Select Model.Suffix:
                                                 <span class="required"> * </span></label>
-                                                        
-                                                <select name="model_suffix" class="required form-control select2me"
+                                                <?php 
+													$sel_model_suffix = (!empty($inspection_config['model_suffix']) ? $inspection_config['model_suffix'] : ''); 
+													$sel_model_suffix = explode(',',$sel_model_suffix);
+													
+												?>        
+                                                <select name="model_suffix[]" class="required form-control select2me" multiple 
                                                     data-placeholder="Select Model.Suffix" data-error-container="#inspection-config-sel-model-error">
                                                     <option value="all">All</option>
-                                                    <?php $sel_model_suffix = (!empty($inspection_config['model']) ? $inspection_config['model'] : ''); ?>
+                                                    <?php //$sel_model_suffix = (!empty($inspection_config['model']) ? $inspection_config['model'] : ''); ?>
                                                     <?php foreach($model_suffixs as $model_suffix) { ?>
-                                                        <option value="<?php echo $model_suffix['model_suffix']; ?>" <?php if($model_suffix['model_suffix'] == $sel_model_suffix) { ?> selected="selected" <?php } ?>>
+                                                        <option value="<?php echo $model_suffix['model_suffix']; ?>" <?php if(in_array($model_suffix['model_suffix'], $sel_model_suffix)) { ?> selected="selected" <?php } ?>>
                                                             <?php echo $model_suffix['model_suffix']; ?>
                                                         </option>
                                                     <?php } ?>        

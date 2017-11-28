@@ -205,7 +205,8 @@ class Sampling_model extends CI_Model {
     }
     
     function get_configs($inspection_id, $line, $tool, $model_suffix) {
-        $sql = "SELECT c.*, pl.name as line_name, i.name as inspection_name
+		$model_suffix = implode('", "', $model_suffix);
+		$sql = "SELECT c.*, pl.name as line_name, i.name as inspection_name
         FROM inspection_config c
         INNER JOIN inspections i
         ON c.inspection_id = i.id
@@ -221,7 +222,7 @@ class Sampling_model extends CI_Model {
         }
         
         if(!empty($line) && $line != 'All') {
-            $sql .= ' AND (c.line = ? OR c.line IS NULL)';
+            $sql .= ' AND (c.line = ?  OR c.line IS NULL)';
             $pass_array[] = $line;
         }
         
@@ -231,14 +232,18 @@ class Sampling_model extends CI_Model {
         }
         
         if(!empty($model_suffix) && $model_suffix != 'All') {
-            $sql .= ' AND (c.model_suffix = ? OR c.model_suffix IS NULL)';
-            $pass_array[] = $model_suffix;
+            $sql .= ' AND  (c.model_suffix IN ( "'.$model_suffix.'" ) OR c.model_suffix IS NULL)';
+           // $pass_array[] = $model_suffix;
         }
+		else if($model_suffix == 'All') {
+            $sql .= ' AND (c.model_suffix != (?) OR c.model_suffix IS NULL)';
+            $pass_array[] = $model_suffix;
+        } 
         
         $sql .= " ORDER BY i.name, pl.name, c.tool, c.model_suffix";
         
         $configs = $this->db->query($sql, $pass_array)->result_array();
-        
+        //echo $this->db->last_query();exit;
         foreach($configs as $key => $config) {
             if($config['sampling_type'] == 'User Defined' || $config['sampling_type'] == 'Interval') {
                 $lots = $this->get_lot_range_samples($config['id']);
@@ -534,7 +539,7 @@ class Sampling_model extends CI_Model {
     function update_product_plan($data, $plan_id = ''){
         $needed_array = array('product_id', 'plan_date', 'line', 'tool', 'model_suffix', 'lot_size', 'original_lot_size', 'is_user_defined');
         $data = array_intersect_key($data, array_flip($needed_array));
-
+		// print_r($data);exit;
         if(empty($plan_id)) {
             $data['created'] = date("Y-m-d H:i:s");
             return (($this->db->insert('production_plans', $data)) ? $this->db->insert_id() : False);

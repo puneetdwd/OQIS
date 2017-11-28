@@ -34,7 +34,9 @@
                     <div>
                         
                         <ul class="user-info-links">
-                            <?php $allowed_products = $this->session->userdata('products'); ?>
+                            <?php $allowed_products = $this->session->userdata('products'); 
+								   // print_r($allowed_products);exit;
+							?>
                             <?php if(count($allowed_products) > 1) { ?>
                                 <li>
                                     <div class="btn-group">
@@ -143,6 +145,16 @@
                                             <i class="fa fa-list"></i> Reference Links 
                                         </a>
                                     </li>
+									<li>
+                                        <a href="<?php echo base_url(); ?>color_setting" target="_blank">
+                                            <i class="fa fa-briefcase"></i> Color Setting 
+                                        </a>
+                                    </li>
+									<li>
+                                        <a href="<?php echo base_url(); ?>emails" target="_blank">
+                                            <i class="fa fa-briefcase"></i> Email IDs 
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         <?php } ?>
@@ -245,6 +257,11 @@
                                     <li class="">
                                         <a href="<?php echo base_url().'reports/gmes'; ?>" target="_blank" class="text-uppercase">
                                             <i class="icon-magnifier"></i> GMES
+                                        </a>
+                                    </li>
+									<li class="">
+                                        <a href="<?php echo base_url().'reports/consolidated_report'; ?>" target="_blank" class="text-uppercase">
+                                            <i class="icon-magnifier"></i> Consolidated Report
                                         </a>
                                     </li>
                                 <?php } ?>

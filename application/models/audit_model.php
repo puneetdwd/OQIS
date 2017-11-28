@@ -53,11 +53,22 @@ class Audit_model extends CI_Model {
             $pass_array[] = $filters['line_id'];
         }
         
-        if(!empty($filters['model_suffix'])) {
+       /*  if(!empty($filters['model_suffix'])) {
             $sql .= " AND a.model_suffix = ?";
             $pass_array[] = $filters['model_suffix'];
-        }
-        
+        } */
+        if(!empty($filters['model_suffix'])){
+		// echo "123";exit;
+			$model_suffix = implode('", "', $filters['model_suffix']);
+			if(!empty($model_suffix) && $model_suffix != 'All') {
+				$sql .= ' AND  (a.model_suffix IN ( "'.$model_suffix.'" ) OR a.model_suffix IS NULL)';
+			   // $pass_array[] = $model_suffix;
+			}
+			else if($model_suffix == 'All') {
+				$sql .= ' AND (a.model_suffix != (?) OR a.model_suffix IS NULL)';
+				$pass_array[] = $model_suffix;
+			} 
+		}
         if(!empty($filters['workorder'])) {
             $sql .= " AND a.workorder = ?";
             $pass_array[] = $filters['workorder'];
@@ -86,6 +97,104 @@ class Audit_model extends CI_Model {
         } else {
             $sql .= " ".$limit;
         }
+        
+        return $this->db->query($sql, $pass_array)->result_array();
+    }
+    function get_completed_audits_new($filters, $count = false) {
+		// print_r($filters);exit;
+        $pass_array = array();
+        
+        $sql = "SELECT a.id, a.audit_date, a.model_suffix, a.serial_no, a.workorder,
+        a.inspection_id, a.state, l.name as line, a.tool, a.modified,
+        i.name as inspection_name, i.gmes_insp_id, CONCAT(u.first_name, ' ', u.last_name) as auditer
+        FROM audits a
+        INNER JOIN users u
+        ON a.auditer_id = u.id
+        INNER JOIN product_lines l
+        ON a.line_id = l.id
+        INNER JOIN inspections i
+        ON a.inspection_id = i.id
+        WHERE state = 'completed'";
+        
+        if(!empty($filters['id'])) {
+            $sql .= " AND a.id = ?";
+            $pass_array[] = $filters['id'];
+        }
+        
+        if(isset($filters['gmes_sent'])) {
+            $sql .= " AND a.gmes_sent = ?";
+            $pass_array[] = $filters['gmes_sent'];
+        }
+
+        if(!empty($filters['start_range']) && !empty($filters['end_range'])) {
+            $sql .= " AND a.audit_date BETWEEN ? AND ?";
+            $pass_array[] = $filters['start_range'];
+            $pass_array[] = $filters['end_range'];
+        }
+        
+        if(!empty($filters['tool'])) {
+            $sql .= " AND a.tool = ?";
+            $pass_array[] = $filters['tool'];
+        }
+        
+        if(!empty($filters['line_id'])) {
+            $sql .= " AND a.line_id = ?";
+            $pass_array[] = $filters['line_id'];
+        }
+        
+        /* if(!empty($filters['model_suffix'])) {
+            $sql .= " AND a.model_suffix = ?";
+            $pass_array[] = $filters['model_suffix'];
+        }
+         */
+		//print_r($filters);exit;
+		if(!empty($filters['model_suffix'])){
+		// echo "123";exit;
+			$model_suffix = implode('", "', $filters['model_suffix']);
+			if(!empty($model_suffix) && $model_suffix != 'All') {
+				$sql .= ' AND  (a.model_suffix IN ( "'.$model_suffix.'" ) OR a.model_suffix IS NULL)';
+			   // $pass_array[] = $model_suffix;
+			}
+			else if($model_suffix == 'All') {
+				$sql .= ' AND (a.model_suffix != (?) OR a.model_suffix IS NULL)';
+				$pass_array[] = $model_suffix;
+			} 
+		}
+		 if(!empty($filters['insp-type'])) {
+			$insp_type = strtolower($filters['insp-type']);
+            $sql .= " AND i.insp_type = ? ";
+            $pass_array[] = $insp_type;
+        }
+		if(!empty($inspection_id)) {
+            $sql .= " AND s.inspection_id = ?";
+            $pass_array[] = $inspection_id;
+        }
+        if(!empty($filters['workorder'])) {
+            $sql .= " AND a.workorder = ?";
+            $pass_array[] = $filters['workorder'];
+        }
+        
+        if(!empty($filters['serial_no'])) {
+            $sql .= " AND a.serial_no = ?";
+            $pass_array[] = $filters['serial_no'];
+        }
+        
+        if(!empty($filters['inspection_id'])) {
+            $sql .= " AND a.inspection_id = ?";
+            $pass_array[] = $filters['inspection_id'];
+        }
+        
+        if($this->product_id) {
+            $sql .= ' AND a.product_id = ?';
+            $pass_array[] = $this->product_id;
+        }
+        
+        $sql .= " GROUP BY a.id
+        ORDER BY a.audit_date DESC, a.id DESC";
+        
+        if($count) {
+            $sql = "SELECT count(id) as c FROM (".$sql.") as sub";
+        } 
         
         return $this->db->query($sql, $pass_array)->result_array();
     }
@@ -188,7 +297,7 @@ class Audit_model extends CI_Model {
         return $this->db->query($sql, $pass_array)->result_array();
     }
     
-    function get_all_running_audits($insp_type = '') {
+    function get_all_running_audits($filter) {
         $sql = "SELECT a.id, a.audit_date, a.auditer_id, a.product_id, a.model_suffix, a.tool, a.serial_no, a.current_iteration, a.iteration_datetime,
         a.inspection_id, a.state, a.register_datetime, a.checkpoint_format, a.automate_file, a.automate_result, a.on_hold, a.workorder,
         i.name as inspection_name, i.full_auto, i.automate_case, i.automate_settings, pl.name as line_name, i.insp_type,
@@ -205,14 +314,126 @@ class Audit_model extends CI_Model {
         AND a.state != 'completed'";
         
         $pass_array = array($this->product_id);
-        if(!empty($insp_type)) {
-            $sql .= " AND i.insp_type = ?";
+		if($this->product_id) {
+            $sql .= ' AND a.product_id = ? ';
+            $pass_array[] = $this->product_id;
+        }
+		if(!empty($filter['insp-type'])) {
+			$insp_type = strtolower($filter['insp-type']);
+            $sql .= " AND i.insp_type = ? ";
             $pass_array[] = $insp_type;
         }
+		if(!empty($filter['start_range']) && !empty($filter['end_range'])) {
+			$sql .= ' AND (a.audit_date BETWEEN ? AND ? ) ';
+            $pass_array[] = $filter['start_range'];
+			
+			/* $day = date("l",strtotime($filter['end_range']));
+			if($day == 'Saturday')
+			{
+				$date_new = date('Y-m-d',strtotime($filter['end_range'] .' +2 day'));
+				$pass_array[] = $date_new;
+			}
+			if($day == 'Sunday')
+			{
+				$date_new = date('Y-m-d',strtotime($filter['end_range'] .' +1 day'));
+				$pass_array[] = $date_new;
+			}
+            else */
+				$pass_array[] = $filter['end_range'];
+        }
+        /* if(!empty($filter['model_suffix'])) {
+			 $sql .= " AND a.model_suffix = ? ";
+            $pass_array[] = $filter['model_suffix'];
+        } */
+		if(!empty($filter['model_suffix'])){
+			// echo "123";
+			$model_suffix = implode('", "', $filter['model_suffix']);
+			if(!empty($model_suffix) && $model_suffix != 'All') {
+				$sql .= ' AND  (a.model_suffix IN ( "'.$model_suffix.'" ) OR a.model_suffix IS NULL)';
+			   // $pass_array[] = $model_suffix;
+			}
+			else if($model_suffix == 'All') {
+				$sql .= ' AND (a.model_suffix != (?) OR a.model_suffix IS NULL)';
+				$pass_array[] = $model_suffix;
+			} 
+		}
+		if(!empty($filter['inspection_id'])) {
+			 $sql .= " AND a.inspection_id = ? ";
+            $pass_array[] = $filter['inspection_id'];
+        }
+		if(!empty($filter['tool'])) {
+			$sql .= " AND a.tool = ? ";
+            $pass_array[] = $filter['tool'];
+        }
+        if(!empty($filter['line_id'])) {
+			$sql .= " AND a.line_id = ? ";
+            $pass_array[] = $filter['line_id'];
+        }
+        
+		
+        return $this->db->query($sql, $pass_array)->result_array();
+    }
+	function get_consolidated_report($filter) {
+       $pass_array = array();
+        
+        $sql = "SELECT a.id, a.audit_date, a.model_suffix, a.serial_no, a.workorder,
+        a.inspection_id, a.state, l.name as line, a.tool, a.modified,i.insp_type as insp_type,
+        i.name as inspection_name, i.gmes_insp_id, CONCAT(u.first_name, ' ', u.last_name) as auditer
+        FROM audits a
+        INNER JOIN users u
+        ON a.auditer_id = u.id
+        INNER JOIN product_lines l
+        ON a.line_id = l.id
+        INNER JOIN inspections i
+        ON a.inspection_id = i.id
+        WHERE state = 'completed'";
+        
+        if($this->product_id) {
+            $sql .= ' AND a.product_id = ? ';
+            $pass_array[] = $this->product_id;
+        }
+		if(!empty($filter['insp-type'])) {
+			$insp_type = strtolower($filter['insp-type']);
+            $sql .= " AND i.insp_type = ? ";
+            $pass_array[] = $insp_type;
+        }
+		if(!empty($filter['start_range']) && !empty($filter['end_range'])) {
+			$sql .= ' AND (a.audit_date BETWEEN ? AND ? ) ';
+            $pass_array[] = $filter['start_range'];
+            $pass_array[] = $filter['end_range'];
+        }
+        if(!empty($filter['model_suffix'])) {
+			 $sql .= " AND a.model_suffix = ? ";
+            $pass_array[] = $filter['model_suffix'];
+        }
+		if(!empty($filter['inspection_id'])) {
+			 $sql .= " AND a.inspection_id = ? ";
+            $pass_array[] = $filter['inspection_id'];
+        }
+		if(!empty($filter['tool'])) {
+			$sql .= " AND a.tool = ? ";
+            $pass_array[] = $filter['tool'];
+        }
+        if(!empty($filter['line_id'])) {
+			$sql .= " AND a.line_id = ? ";
+            $pass_array[] = $filter['line_id'];
+        }
+        
+		$sql .= " GROUP BY a.id 
+        ORDER BY a.audit_date DESC, a.id DESC";//l.name, a.model_suffix,i.name 
+        
+        /* if($count) {
+            $sql = "SELECT count(id) as c FROM (".$sql.") as sub";
+        } else {
+            $sql .= " ".$limit;
+        } */
+        
         return $this->db->query($sql, $pass_array)->result_array();
     }
     
     function get_grouped_audit_with_plan($filters, $limit = '', $only_completed = FALSE, $type = 'model_suffix') {
+		//print_r($filters);
+		//exit;
         $sql = "SELECT a.id, a.audit_date, a.product_id, a.inspection_id, a.".$type." as model_suffix, a.automate_file,
         p.name as product_name, i.name as inspection_name, 
         GROUP_CONCAT(DISTINCT a.id ORDER BY a.id) as audit_ids,  
@@ -246,7 +467,11 @@ class Audit_model extends CI_Model {
             AND a.product_id    = s.product_id     
         )
         WHERE state = 'completed'";
-        
+        if(!empty($filters['insp-type'])) {
+			$insp_type = strtolower($filters['insp-type']);
+            $sql .= " AND i.insp_type = ? ";
+            $pass_array[] = $insp_type;
+        }
         if($type == 'tool') {
             $sql .= " AND c.inspection_type = 'Tool'";
         } else {
@@ -269,10 +494,23 @@ class Audit_model extends CI_Model {
             $pass_array[] = $filters['tool'];
         }
         
-        if(!empty($filters['model_suffix'])) {
-            $sql .= " AND a.model_suffix = ?";
-            $pass_array[] = $filters['model_suffix'];
-        }
+        /* if(!empty($filters['model_suffix'])) {
+            // $sql .= " AND a.model_suffix = ?";
+            // $pass_array[] = $filters['model_suffix']; 
+			$sql .= ' AND  (a.model_suffix IN ( "'.$model_suffix.'" ) OR a.model_suffix IS NULL)';
+           
+        } */
+		if(!empty($filters['model_suffix'])){
+			$model_suffix = implode('", "', $filters['model_suffix']);
+			if(!empty($model_suffix) && $model_suffix != 'All') {
+				$sql .= ' AND  (a.model_suffix IN ( "'.$model_suffix.'" ) OR a.model_suffix IS NULL)';
+			   // $pass_array[] = $model_suffix;
+			}
+			else if($model_suffix == 'All') {
+				$sql .= ' AND (a.model_suffix != (?) OR a.model_suffix IS NULL)';
+				$pass_array[] = $model_suffix;
+			} 
+		}
         
         if(!empty($filters['inspection_id'])) {
             $sql .= " AND a.inspection_id = ?";
@@ -667,6 +905,63 @@ class Audit_model extends CI_Model {
         
         return $this->db->query($sql, $pass_array)->result_array();
     }
+    function pending_checkpoints_new($filters, $product_id, $audit_checkpoint_id = '') {
+		// print_r($filters);exit;
+        $sql = "SELECT ac.id, a.product_id, ac.id as audit_checkpoint_id, a.audit_date, 
+        a.model_suffix, a.serial_no, a.checkpoint_format,
+        ac.audit_id, ac.checkpoint_no, ac.insp_item, ac.insp_item2, ac.insp_item3, ac.insp_item4,
+        ac.spec, i.name as inspection_name, a.inspection_id
+        FROM audit_checkpoints ac
+        INNER JOIN audits a
+        ON ac.audit_id = a.id
+        INNER JOIN inspections i
+        ON a.inspection_id = i.id
+        WHERE ac.result = 'NA'
+        AND ac.is_na = 0
+        AND ac.na_approved = 0
+        AND a.state != 'aborted'
+        AND a.state != 'completed'
+        AND a.product_id = ?";
+        
+        $pass_array = array($product_id);
+        if(!empty($audit_checkpoint_id)) {
+            $sql .= " AND ac.id = ?";
+            $pass_array[] = $audit_checkpoint_id;
+        }
+		if(!empty($filters['start_range']) && !empty($filters['end_range'])) {
+            $sql .= " AND a.audit_date BETWEEN ? AND ?";
+            $pass_array[] = $filters['start_range'];
+            $pass_array[] = $filters['end_range'];
+        }
+		/* if(!empty($filters['model_suffix'])) {
+            $sql .= " AND a.model_suffix = ?";
+            $pass_array[] = $filters['model_suffix'];
+        } */
+		if(!empty($filters['model_suffix'])){
+		// echo "123";exit;
+			$model_suffix = implode('", "', $filters['model_suffix']);
+			if(!empty($model_suffix) && $model_suffix != 'All') {
+				$sql .= ' AND  (a.model_suffix IN ( "'.$model_suffix.'" ) OR a.model_suffix IS NULL)';
+			   // $pass_array[] = $model_suffix;
+			}
+			else if($model_suffix == 'All') {
+				$sql .= ' AND (a.model_suffix != (?) OR a.model_suffix IS NULL)';
+				$pass_array[] = $model_suffix;
+			} 
+		}
+		if(!empty($filters['inspection_id'])) {
+            $sql .= " AND a.inspection_id = ?";
+            $pass_array[] = $filters['inspection_id'];
+        }
+        if(!empty($filters['insp-type'])) {
+			$insp_type = strtolower($filters['insp-type']);
+            $sql .= " AND i.insp_type = ? ";
+            $pass_array[] = $insp_type;
+        }
+        
+        
+        return $this->db->query($sql, $pass_array)->result_array();
+    }
     
     function pending_abort_requests($product_id, $audit_id = '') {
         $sql = "SELECT a.id, a.audit_date, a.auditer_id, a.product_id, a.model_suffix, a.tool, a.serial_no,
@@ -758,7 +1053,99 @@ class Audit_model extends CI_Model {
         $pass_array = array($this->product_id);
         return $this->db->query($sql, $pass_array)->result_array();
     }
+	
+	function regular_pending_counts() {
+        $sql = "SELECT a.auditer_id, u.first_name, u.last_name,
+            SUM(IF(i.insp_type = 'regular', 1, 0)) as regular_pending_count,
+            FROM audits a 
+            INNER JOIN inspections i 
+            ON a.inspection_id = i.id 
+            INNER JOIN users u
+            ON a.auditer_id = u.id
+            WHERE a.product_id = ?
+            AND a.state != 'aborted'
+            AND a.state = 'started'
+            AND a.on_hold != 1
+            GROUP BY a.auditer_id
+            HAVING count(a.id) > 0";
 
+        $pass_array = array($this->product_id);
+        return $this->db->query($sql, $pass_array)->result_array();
+    }
+	
+	function user_wise_inprocess_insp_count() {
+		$start_date = date('Y-m-01');
+		//$end_date = date('Y-m-d');
+        $sql = "SELECT a.auditer_id, u.first_name, u.last_name,
+            SUM(IF(i.insp_type = 'regular', 1, 0)) as regular_inprogress_count,
+            SUM(IF(i.insp_type = 'interval', 1, 0)) as interval_inprogress_count
+            FROM audits a 
+            INNER JOIN inspections i 
+            ON a.inspection_id = i.id 
+            INNER JOIN users u
+            ON a.auditer_id = u.id
+            WHERE a.product_id = ?
+            AND a.state != 'aborted'
+            AND a.state = 'started'
+            AND a.on_hold != 1
+			
+			AND a.audit_date >= ? 
+            
+			GROUP BY a.auditer_id
+            HAVING count(a.id) > 0";
+
+        $pass_array = array($this->product_id,$start_date);
+        return $this->db->query($sql, $pass_array)->result_array();
+    }
+	
+	function get_pending_audits_count($start_date, $end_date, $product_id, $inspection_id = '', $modelwise = false) {
+        $sql = "SELECT DATE_FORMAT(s.`sampling_date`, \"%D %b'%y\") as sampling_date, s.`inspection_id`,
+            s.model_suffix, i.name as inspection_name,i.insp_type as insp_type,
+            s.no_of_samples as samples, COUNT(a.id) as total_audits 
+            FROM `sampling_plans` s
+            INNER JOIN inspections i
+            ON s.inspection_id = i.id
+            LEFT JOIN audits as a
+            ON ( 
+                a.audit_date = s.`sampling_date` 
+                AND a.inspection_id = s.inspection_id 
+                AND a.model_suffix = s.model_suffix 
+                AND a.state = 'completed' 
+            )";
+            
+        $sql .= " WHERE s.product_id = ?";
+        $pass_array = array($product_id); 
+        
+        if(empty($end_date)) {
+            $sql .= " AND s.sampling_date = ?";
+            $pass_array[] = $start_date; 
+        } else {
+            $sql .= " AND s.sampling_date BETWEEN ? AND ?";
+            $pass_array[] = $start_date; 
+            $pass_array[] = $end_date; 
+        }
+                
+        if(!empty($inspection_id)) {
+            $sql .= " AND s.inspection_id = ?";
+            $pass_array[] = $inspection_id;
+        }
+        
+        $sql .= " GROUP BY s.sampling_date, s.`inspection_id`, s.model_suffix
+            HAVING COUNT(a.id) < s.no_of_samples";
+        
+        if(!$modelwise) {
+            $sql = "SELECT sampling_date, inspection_id, inspection_name,insp_type,
+                SUM(samples) as samples, 
+                SUM(total_audits) as total_audits
+                FROM (".$sql.") as f
+                GROUP BY sampling_date, inspection_id";
+        }
+
+        $result = $this->db->query($sql, $pass_array);
+        return $result->result_array();
+    }
+    
+   
     function get_all_paired_audits($audit_id) {
         $this->db->where('paired_with', $audit_id);
         $this->db->where('paired', 1);

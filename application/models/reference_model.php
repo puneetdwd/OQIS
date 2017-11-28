@@ -237,4 +237,18 @@ class Reference_model extends CI_Model {
         
         return $this->db->query($sql, $pass_array)->result_array();
     }
+	
+	function insert_references($references, $product_id) {
+        $this->db->insert_batch('reference_links', $references);
+        //echo $this->db->last_query();exit;
+        //$this->remove_dups_model_suffixs($product_id);
+    }
+    
+    function remove_dups_model_suffixs($product_id) {
+        $sql = "DELETE FROM reference_links WHERE id NOT IN (
+            SELECT * FROM ( SELECT max(id) FROM reference_links WHERE product_id = ? GROUP BY product_id, model_suffix,inspection_id) as d
+        ) AND product_id = ?";
+        
+        return $this->db->query($sql, array($product_id, $product_id));
+    }
 }

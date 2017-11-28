@@ -277,6 +277,7 @@ class Inspections extends Admin_Controller {
         
         if(!empty($id)) {
             $excluded_checkpoint = $this->Inspection_model->get_excluded_checkpoint($id);
+			//print_r($excluded_checkpoint);exit;
             if(empty($excluded_checkpoint))
                 redirect(base_url().'inspections/excluded_checkpoints');
 
@@ -286,31 +287,37 @@ class Inspections extends Admin_Controller {
         }
         
         if($this->input->post()) {
-            $this->load->library('form_validation');
+                //echo '<pre>';print_r($this->input->post());exit;
+
+				$this->load->library('form_validation');
 
             $validate = $this->form_validation;
             $validate->set_rules('inspection_id', 'Inspection', 'trim|required|xss_clean');
-            $validate->set_rules('model', 'Model', 'trim|required|xss_clean');
+            //$validate->set_rules('model', 'Model', 'trim|required|xss_clean');
             $validate->set_rules('checkpoints_nos', 'Checkpoint Nos', 'required|xss_clean');
             
             if($validate->run() === TRUE) {
                 $post_data = $this->input->post();
                 $post_data['checkpoints_nos'] = implode(',', $post_data['checkpoints_nos']);
-                
-                $exists = $this->Inspection_model->excluded_checkpoint_exists($this->input->post('inspection_id'), $this->input->post('model'), $id);
-                if(!$exists) {
-
-                    $excluded_id = $this->Inspection_model->update_excluded_checkpoints($post_data, $id);
-                    if($excluded_id) {
-                        $this->session->set_flashdata('success', 'Record successfully '.(($excluded_id) ? 'updated' : 'added').'.');
-                        redirect(base_url().'inspections/excluded_checkpoints');
-                    } else {
-                        $data['error'] = 'Something went wrong, Please try again';
-                    }
-
-                } else {
-                    $data['error'] = 'Record already exists for this Inspection and Model.';
-                }
+				$sel_model = $post_data['model'];
+				foreach($sel_model as $m){
+					$post_data['model'] = $m;
+					echo $m;
+					$exists = $this->Inspection_model->excluded_checkpoint_exists($this->input->post('inspection_id'),$m, $id);
+					//print_r($exists);
+					if(!$exists) {
+						$excluded_id = $this->Inspection_model->update_excluded_checkpoints($post_data, $id);
+						$this->session->set_flashdata('success', 'Record successfully '.(($excluded_id) ? 'updated' : 'added').'.');
+					} else {
+						$data['error'] = 'Record already exists for this Inspection and Model.';
+					}
+				}
+				if($excluded_id) {
+					
+					redirect(base_url().'inspections/excluded_checkpoints');
+				} else {
+					$data['error'] = 'Something went wrong, Please try again';
+				}
             } else {
                 $data['error'] = validation_errors();
             }
@@ -761,6 +768,16 @@ class Inspections extends Admin_Controller {
         $this->load->model('Inspection_model');
         $inspection = $this->Inspection_model->get_inspection($inspection_id);
         echo json_encode($inspection);
+    }
+	public function get_inspection_by_type() {
+		if($this->input->post('insp_type')) {
+			$insp_type = $this->input->post('iinsp_type');
+			$this->load->model('Inspection_model');
+			$data['inspections'] = $this->Inspection_model->get_all_inspections_by_product_type($this->product_id,strtolower($this->input->post('insp_type')));
+			//print_r($data['inspections']);
+			//echo $this->db->last_query();exit;
+			echo json_encode($data);
+        }
     }
 
     public function download_checkpoint($inspection_id) {

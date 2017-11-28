@@ -437,7 +437,7 @@ class Products extends Admin_Controller {
             
             $model_suffixs[]        = $temp;
         }
-        //$this->print_array($model_suffixs);
+        echo '<pre>';print_r($model_suffixs);exit;
         $this->load->model('Product_model');
         $this->Product_model->insert_model_suffixs($model_suffixs, $product_id);
         

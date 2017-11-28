@@ -27,6 +27,12 @@ class User_model extends CI_Model {
         $users = $this->db->query($sql, $pass_array);
         return $users->result_array();
     }
+	function get_all_emails($pid) {
+        $sql = "SELECT * from emails e where product_id = ? GROUP BY e.id";
+        
+        $emails = $this->db->query($sql,$pid);
+        return $emails->result_array();
+    }
 
     function get_user($username) {
         $sql = "SELECT u.*, 
@@ -45,6 +51,13 @@ class User_model extends CI_Model {
         $sql .= " GROUP BY u.id";
         
         return $this->db->query($sql, $pass_array)->row_array();
+    }
+    function get_email($id) {
+        $sql = "SELECT * 
+        FROM emails
+        WHERE id = ? GROUP BY id";
+        
+        return $this->db->query($sql,$id)->row_array();
     }
     
     function get_user_by_type($user_type) {
@@ -65,6 +78,17 @@ class User_model extends CI_Model {
         $this->db->where('username', $username);
 
         return $this->db->count_all_results('users');
+    }
+	
+	function is_email_exists($email, $id = '', $pid) {
+        if(!empty($id)) {
+            $this->db->where('id !=', $id);
+        }
+
+        $this->db->where('email_id', $email);
+        $this->db->where('product_id', $pid);
+
+        return $this->db->count_all_results('emails');
     }
 
     function update_user($data, $user_id = '') {
@@ -88,6 +112,22 @@ class User_model extends CI_Model {
             $data['modified'] = date("Y-m-d H:i:s");
 
             return (($this->db->update('users', $data)) ? $user_id : False);
+        }
+    }
+	function update_email($data, $user_id = '') {
+        //filter unwanted fields while inserting in table.
+        $needed_array = array('name', 'email_id','product_id');
+        $data = array_intersect_key($data, array_flip($needed_array));
+
+        if(empty($user_id)) {
+            $data['created'] = date("Y-m-d H:i:s");
+
+            return (($this->db->insert('emails', $data)) ? $this->db->insert_id() : False);
+        } else {
+            $this->db->where('id', $user_id);
+            $data['modified'] = date("Y-m-d H:i:s");
+
+            return (($this->db->update('emails', $data)) ? $user_id : False);
         }
     }
 

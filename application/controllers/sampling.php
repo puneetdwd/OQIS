@@ -51,16 +51,22 @@ class Sampling extends Admin_Controller {
         
         if($this->input->post()) {
             $production_plan_date = $this->input->post('plan_date') ? $this->input->post('plan_date') : $plan_date;
-
+			//print_r();exit;
             if(strtotime($production_plan_date) >= strtotime(date('Y-m-d'))) {
                 $post_data = $this->input->post();
                 $post_data['product_id'] = $this->product_id;
                 $post_data['plan_date'] = $plan_date;
                 $post_data['original_lot_size'] = $post_data['lot_size'];
                 $post_data['is_user_defined'] = 1;
-            
-                $id = $this->Sampling_model->update_product_plan($post_data);
-            
+				
+				//$post_data['model_suffix'] = implode(',',$post_data['model_suffix']);
+				
+				//print_r($post_data['model_suffix']);exit;
+				$sel_models = $post_data['model_suffix'];
+				foreach($sel_models as $sm){
+					$post_data['model_suffix'] = $sm;
+					$id = $this->Sampling_model->update_product_plan($post_data);
+				}
                 if($id) {
                     $this->session->set_flashdata('success', 'Production Plan successfully '.(($reference_id) ? 'updated' : 'added').'.');
                     redirect(base_url().'sampling/view_production_plan/'.$plan_date);
@@ -185,12 +191,14 @@ class Sampling extends Admin_Controller {
         
         $data['model_suffixs'] = $this->Product_model->get_all_suffixs($this->product_id);
         if($this->input->post()) {
-
+			$model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
             $this->load->model('Sampling_model');
-            $data['configs'] = $this->Sampling_model->get_configs($this->input->post('inspection_id'), $this->input->post('line'),
-                $this->input->post('tool'), $this->input->post('model_suffix')
+            $data['configs'] = $this->Sampling_model->get_configs(
+				$this->input->post('inspection_id'), $this->input->post('line'),
+                $this->input->post('tool'), $model_s
             );
-
+			//print_r($model_s);
         }
         
         $this->template->write_view('content', 'sampling_plans/configs', $data);
@@ -255,9 +263,9 @@ class Sampling extends Admin_Controller {
             $validate->set_rules('line', 'Line', 'trim|required|xss_clean');
             if($this->input->post('inspection_type') === 'Tool') {
                 $validate->set_rules('tool', 'Tool', 'trim|required|xss_clean');
-            } else {
+            } /* else {
                 $validate->set_rules('model_suffix', 'Model.Suffix', 'trim|required|xss_clean');
-            }
+            } */
             
             $validate->set_rules('sampling_type', 'Sampling Type', 'trim|required|xss_clean');
             
@@ -306,26 +314,30 @@ class Sampling extends Admin_Controller {
                     }
 
                     //$this->Sampling_model->delete_if_exists_inspection_config($this->product_id, $post_data['inspection_id'], $model_suffix);
-                    $response_id = $this->Sampling_model->update_inspection_config($post_data, $config_id);
-                    
-                    if($response_id) {
-                        if($post_data['sampling_type'] == 'User Defined' || $post_data['sampling_type'] == 'Interval') {
-                            $this->Sampling_model->delete_lot_range_samples($response_id);
-                            $lot_size = array();
-                            foreach($lower_val as $key => $val) {
-                                $temp = array();
-                                $temp['config_id'] = $response_id;
-                                $temp['lower_val'] = $val;
-                                $temp['higher_val'] = $higher_val[$key];
-                                $temp['no_of_samples'] = $no_of_samples[$key];
+					// print_r();exit;
+					$ms = $post_data['model_suffix'];
+					foreach($ms as $m){
+						$post_data['model_suffix'] = $m;
+						$response_id = $this->Sampling_model->update_inspection_config($post_data, $config_id);
+						
+						if($response_id) {
+							if($post_data['sampling_type'] == 'User Defined' || $post_data['sampling_type'] == 'Interval') {
+								$this->Sampling_model->delete_lot_range_samples($response_id);
+								$lot_size = array();
+								foreach($lower_val as $key => $val) {
+									$temp = array();
+									$temp['config_id'] = $response_id;
+									$temp['lower_val'] = $val;
+									$temp['higher_val'] = $higher_val[$key];
+									$temp['no_of_samples'] = $no_of_samples[$key];
 
-                                $lot_size[] = $temp;
-                            }
+									$lot_size[] = $temp;
+								}
 
-                            $this->Sampling_model->insert_lot_range_samples($lot_size, $response_id);
-                        }
+								$this->Sampling_model->insert_lot_range_samples($lot_size, $response_id);
+							}
+						}
                     }
-                    
                     redirect(base_url().'sampling/configs');
                 }
             } else {
@@ -894,13 +906,17 @@ class Sampling extends Admin_Controller {
         if($this->input->post()) {
             $post_data = $this->input->post();
             $post_data['product_id'] = $this->product_id;
-
-            $id = $this->Sampling_model->update_production_plan_monthly($post_data);
-        
-            if($id) {
+			//print_r($post_data);exit;
+			$ms = $post_data['model_suffix'];
+			foreach($ms as $m)
+			{
+				$post_data['model_suffix'] = $m;
+				$id = $this->Sampling_model->update_production_plan_monthly($post_data);
                 $this->Sampling_model->update_production_tool_monthly($this->input->post('plan_month'));
+			}
+            if($id) {
                 $this->session->set_flashdata('success', 'Production Plan successfully '.(($id) ? 'updated' : 'added').'.');
-                redirect(base_url().'sampling/production_plan_monthly/');
+               redirect(base_url().'sampling/production_plan_monthly/');
             } else {
                 $data['error'] = 'Something went wrong, Please try again';
             }

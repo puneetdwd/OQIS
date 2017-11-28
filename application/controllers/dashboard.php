@@ -162,10 +162,28 @@ class Dashboard extends Admin_Controller {
     }
     
     public function na_checkpoints() {
+		$this->load->model('Inspection_model');
         $data = array();
+        $data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, null);
         
         $this->load->model('Audit_model');
-        $data['audit_checkpoints'] = $this->Audit_model->pending_checkpoints($this->product_id);
+		$data['models'] = $this->Audit_model->get_all_audit_models();
+	    $data['insp_type'] = array(
+								'regular'=>array('type'=>'Regular'),
+								'interval'=>array('type'=>'Interval')
+							);
+        $this->load->model('Product_model');
+        $data['tools'] = $this->Product_model->get_all_tools($this->product_id);
+        $data['lines'] = $this->Product_model->get_all_product_lines($this->product_id);
+        
+        $filters = $this->input->post() ? $this->input->post() : array();
+        $filters = array_filter($filters);
+        $_SESSION['audit_checkpoints_filters'] = $filters;
+		//if(count($filters) > 1)  
+			$model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
+            
+			$data['audit_checkpoints'] = $this->Audit_model->pending_checkpoints_new($filters , $this->product_id);
 
         $this->template->write_view('content', 'na_checkpoints', $data);
         $this->template->render();
@@ -214,13 +232,63 @@ class Dashboard extends Admin_Controller {
         $data['on_holds'] = $this->Audit_model->get_on_hold_audits($this->id);
         
         $data['abort_requests'] = $this->Audit_model->pending_abort_requests($this->product_id);
-        //echo $this->db->last_query();exit;
         $data['on_hold_counts'] = $this->Audit_model->user_wise_on_hold_count();
-        
+        $data['inprocess_insp_counts'] = $this->Audit_model->user_wise_inprocess_insp_count();
+        $data['pending_counts'] = $this->pending_counts();
         
         return $data;
     }
     
+	private function get_days_for_range($start_range, $end_range) {
+        $days = array();
+        
+        while($start_range <= $end_range) {
+            $days[] = date("jS M'y", strtotime($start_range));
+            
+            $start_range = date('Y-m-d', strtotime("+1 day", strtotime($start_range)));
+        }
+        
+        return $days;
+    }
+    private function pending_counts() {
+		$this->load->model('Audit_model');
+		    $start_range = date('Y-m-01');//,time()-60*60*24
+            $end_range = date('Y-m-d',time()-60*60*24);
+           // $inspection_id = $post_data['inspection_id'];
+
+            $counts = $this->Audit_model->get_pending_audits_count($start_range, $end_range, $this->product_id);
+            //echo "<pre>";echo $this->db->last_query();exit;
+			//echo 'Counts=><pre>';print_r($counts);
+            $days = $this->get_days_for_range($start_range, $end_range);
+            $days = array_fill_keys(($days), '-');
+            $data['days'] = $days; 
+            
+            $reports = array();
+			
+            $totals = array_merge(array('Total' => 'Total'), $days);
+            foreach($counts as $count) {
+				
+                if(!isset($reports[$count['inspection_id']])) {
+                    $reports[$count['inspection_id']] = array_merge(array('inspection_name' => $count['inspection_name']), $days);
+                }
+				$pending = $count['samples']-$count['total_audits'];
+                if($count['insp_type'] == 'regular'){
+					$reports[$count['inspection_id']]['insp_type'] = 'Regular';
+				}
+                if($count['insp_type'] == 'interval'){
+					$reports[$count['inspection_id']]['insp_type'] = 'Interval';
+                }
+             
+				$reports[$count['inspection_id']][$count['sampling_date']] = ($pending < 0) ? 0 : $pending;
+                
+                $totals[$count['sampling_date']] += $pending;
+            }
+            
+            //$reports[] = $totals;
+            return $reports;
+            
+            //echo "reports=><pre>";print_r($reports);exit;
+	}
     private function dashboard() {
         $data = array();
         $this->load->model('Audit_model');

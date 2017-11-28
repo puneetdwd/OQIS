@@ -71,15 +71,49 @@
                                         <div class="col-md-12">
                                             <div class="form-group" id="report-sel-model-error">
                                                 <label class="control-label">Select Model.Suffix:</label>
-                                                        
-                                                <select name="model_suffix" class="form-control select2me"
+                                                <?php	
+														$sel_model_suffix = (!empty($selected_model) ? $selected_model : array(0=>'All')); 
+														//echo "1";print_r($sel_model_suffix);
+												?> 
+                                                <select multiple name="model_suffix[]" class="form-control select2me"
                                                     data-placeholder="Select Model.Suffix" data-error-container="#report-sel-model-error">
+												<?php if(empty($this->input->post())){ ?>
+													<option value="All" >All</option>
+												<?php } 
+												else{ ?>
+													<option value="All" <?php if($sel_model_suffix[0] == 'All'){ ?> selected="selected" <?php } ?>>All</option>
+												<?php } ?> 
+												
                                                     <option></option>
                                                     <?php foreach($models as $model) { ?>
-                                                        <option value="<?php echo $model['model_suffix']; ?>" <?php if($model['model_suffix'] == $this->input->post('model_suffix')) { ?> selected="selected" <?php } ?>>
-                                                            <?php echo $model['model_suffix']; ?>
+                                                        <option value="<?php echo $model['model_suffix']; ?>" 
+														<?php 
+														if(!empty($sel_model_suffix)){	
+																if(in_array($model['model_suffix'], $sel_model_suffix)) { 
+																	?> selected="selected" <?php 
+															}
+														}														
+														?>
+														>
+                                                        <?php echo $model['model_suffix']; ?>
                                                         </option>
-                                                    <?php } ?>        
+                                                    <?php } 	//exit;	?>        
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+									<div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group" id="report-sel-model-error">
+                                                <label class="control-label">Select Inspection Type:</label>
+                                                <select name="insp-type" id="insp-type" class="form-control select2me"
+                                                    data-placeholder="Select Inspection Type" data-error-container="#report-sel-model-error">
+                                                    <option></option>
+													<?php foreach($insp_type as $it) { ?>
+													<option value="<?php echo $it['type']; ?>" <?php if($it['type'] == $this->input->post('insp-type')) { ?> selected="selected" <?php } ?>>
+                                                            <?php echo $it['type']; ?>
+                                                    </option>
+													 <?php } ?>
                                                 </select>
                                             </div>
                                         </div>
@@ -90,7 +124,7 @@
                                             <div class="form-group" id="report-sel-inspection-error">
                                                 <label class="control-label">Select Inspection:</label>
                                                         
-                                                <select name="inspection_id" class="form-control select2me"
+                                                <select name="inspection_id" id="inspection_id" class="form-control select2me"
                                                     data-placeholder="Select Inspection" data-error-container="#report-sel-inspection-error">
                                                     <option></option>
                                                     <?php foreach($inspections as $inspection) { ?>
@@ -118,13 +152,20 @@
                             <div class="caption">
                                 <i class="fa fa-reorder"></i>List of Inspections
                             </div>
+							<?php if(!empty($audits)) { ?>
+								<div class="actions" style='margin: 5px;'>
+									<a class="button normals btn-circle" href="<?php echo base_url()."reports/export_excel/report"; ?>">
+										<i class="fa fa-download"></i> Export Report
+									</a>
+								</div>					
+							<?php } ?>
                         </div>
                         <div class="portlet-body">
                             <?php if(empty($audits)) { ?>
                                 <p class="text-center">No inspection done yet.</p>
                             <?php } else { ?>
                                 <div class="table-responsive">
-                                    <table class="table table-hover table-light">
+                                    <table class="table table-hover table-light" id='make-data-table'>
                                         <thead>
                                             <tr>
                                                 <th>Inspect Date</th>

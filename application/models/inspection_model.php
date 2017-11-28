@@ -65,6 +65,14 @@ class Inspection_model extends CI_Model {
         
         return $this->db->get('inspections')->result_array();
     }
+    function get_all_inspections_by_product_type($product_id,$insp_type){
+		$this->db->where('product_id', $product_id);
+        $this->db->where('is_deleted', 0);
+        $this->db->where('is_active',1);
+        $this->db->where('insp_type', $insp_type);
+       
+        return $this->db->get('inspections')->result_array();
+    }
     
     function get_inspection($id, $is_deleted = 0) {
         $sql = 'SELECT i.id, i.name, i.product_id, i.checkpoints_excel, i.checkpoint_format, i.directory_name, i.gmes_insp_id,
@@ -77,6 +85,18 @@ class Inspection_model extends CI_Model {
         AND is_deleted = ?';
         
         $pass_array = array($id, $is_deleted);
+        if($this->product_id) {
+            $sql .= ' AND i.product_id = ?';
+            $pass_array[] = $this->product_id;
+        }
+        
+        return $this->db->query($sql, $pass_array)->row_array();
+    }
+    function get_inspection_by_name($name) {
+        $sql = 'SELECT * FROM inspections i  
+        WHERE i.is_active = 1 AND i.is_deleted = 0 AND i.name = ? ';
+        
+        $pass_array = array($name);
         if($this->product_id) {
             $sql .= ' AND i.product_id = ?';
             $pass_array[] = $this->product_id;

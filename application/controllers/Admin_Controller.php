@@ -99,7 +99,8 @@ class Admin_Controller extends CI_Controller {
     }
     
     function upload_file($file_field, $file_name, $upload_path, $file_types = 'xls|xlsx') {
-        if(!is_dir($upload_path)) {
+        // echo $upload_path;exit;
+		if(!is_dir($upload_path)) {
             mkdir($upload_path);
         }
         
@@ -308,6 +309,10 @@ class Admin_Controller extends CI_Controller {
     }
     
     function display_day_progress($plan_date) {
+		$this->load->model('Color_Model');
+        $color_setting = $this->Color_Model->get_color_setting();
+	
+		
         $this->load->model('Sampling_model');
         
         $dimensions = $this->Sampling_model->get_sampling_plan_dimensions($plan_date);
@@ -480,14 +485,27 @@ class Admin_Controller extends CI_Controller {
                     $ip = $progress['in_progess'];
                     
                     $color = '';
-                    if($p > 0) {
-                        if($p <= ($c+$ip)) {
-                            $color = '#26C281';
-                        } else if(($c+$ip) > 0) {
-                            $color = '#F3C200';
-                        } else {
-                            $color = '#E35B5A';
-                        }
+					
+                    if($color_setting['is_color'] == 1) {
+						if($p > 0) {
+							if($p <= ($c+$ip)) {
+								$color = '#26C281';
+							} else if(($c+$ip) > 0) {
+								$color = '#F3C200';
+							} else {
+								$color = '#E35B5A';
+							}
+						}
+                    }else {
+						if($p > 0) {
+							if($p <= ($c+$ip)) {
+								$color = 'transparent';
+							} else if(($c+$ip) > 0) {
+								$color = 'transparent';
+							} else {
+								$color = 'transparent';
+							}
+						}
                     }
                     
                     $prog = array();
@@ -504,14 +522,26 @@ class Admin_Controller extends CI_Controller {
                     $ip = $tool_insp_status[$iter_key][$i]['in_progess'];
                     
                     $color = '';
-                    if($p > 0) {
-                        if($p <= ($c+$ip)) {
-                            $color = '#26C281';
-                        } else if(($c+$ip) > 0) {
-                            $color = '#F3C200';
-                        } else {
-                            $color = '#E35B5A';
-                        }
+                     if($color_setting['is_color'] == 1) {
+						if($p > 0) {
+							if($p <= ($c+$ip)) {
+								$color = '#26C281';
+							} else if(($c+$ip) > 0) {
+								$color = '#F3C200';
+							} else {
+								$color = '#E35B5A';
+							}
+						}
+                    }else {
+						if($p > 0) {
+							if($p <= ($c+$ip)) {
+								$color = 'transparent';
+							} else if(($c+$ip) > 0) {
+								$color = 'transparent';
+							} else {
+								$color = 'transparent';
+							}
+						}
                     }
                     
                     if($group_count == 1) {
@@ -698,4 +728,6 @@ class Admin_Controller extends CI_Controller {
         curl_close($ch);
         return $flag;
     }
+	
+	
 }

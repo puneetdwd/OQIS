@@ -43,7 +43,7 @@
         <link href="<?php echo base_url(); ?>assets/layouts/layout5/css/font.css" rel="stylesheet" type="text/css" />
         <link href="<?php echo base_url(); ?>assets/layouts/layout5/css/new_design.css?123" rel="stylesheet" type="text/css" />
         <!-- END THEME LAYOUT STYLES -->
-        <link rel="shortcut icon" href="favicon.ico" /> 
+        <link rel="shortcut icon" href="<?php echo base_url(); ?>favicon.ico" /> 
         
         <script src="<?php echo base_url(); ?>assets/global/plugins/jquery.min.js" type="text/javascript"></script>
     </head>

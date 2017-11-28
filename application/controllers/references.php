@@ -14,8 +14,8 @@ class References extends Admin_Controller {
     public function index() {      
         $data = array();
         $this->load->model('Reference_model');
+		$data['product_id'] = $this->product_id;
         $data['references'] = $this->Reference_model->get_all_references();
-
         $this->template->write_view('content', 'references/index', $data);
         $this->template->render();
     }
@@ -114,7 +114,7 @@ class References extends Admin_Controller {
         if($this->input->post()) {
             $post_data = $this->input->post();
             $post_data['product_id'] = $this->product_id;
-            
+            //print_r($post_data['model_suffix']);exit;
             if(empty($post_data['mandatory'])) {
                 $post_data['mandatory'] = 0;
             }
@@ -143,10 +143,17 @@ class References extends Admin_Controller {
                 }
 
             }
-
-            if(!isset($data['error'])) {
-                $id = $this->Reference_model->update_reference($post_data, $reference_id);
-            
+           if(!isset($data['error'])) {
+			   /*  if(count($post_data['model_suffix']) > 1){
+					// $post_data['model_suffix'] = implode(',',$post_data['model_suffix']);
+					$id = $this->Reference_model->update_reference($post_data, $reference_id);
+			    } */
+				// print_r($post_data);exit;
+				$sel_model_suffix = $post_data['model_suffix'];
+				foreach($sel_model_suffix as $ms){
+					$post_data['model_suffix'] = $ms;
+					$id = $this->Reference_model->update_reference($post_data, $reference_id);
+				}
                 if($id) {
                     $this->session->set_flashdata('success', 'Reference Link successfully '.(($reference_id) ? 'updated' : 'added').'.');
                     redirect(base_url().'references');
@@ -334,4 +341,123 @@ class References extends Admin_Controller {
         );
         echo $this->load->view('references/checkpoints_config_ajax', $data, TRUE);
     }
+	public function upload_reference() {
+        if($this->product_id) {
+            $product_id = $this->product_id;
+        }
+        
+        
+		$data = array();
+        $this->load->model('Product_model');
+        
+        $product = $this->Product_model->get_product($product_id);
+        if(empty($product))
+            redirect(base_url().'products');
+        
+        $data['product'] = $product;
+        
+        if($this->input->post()) {
+        //echo $_FILES['references_excel']['name'];exit;
+            if(!empty($_FILES['references_excel']['name'])) {
+                $output = $this->upload_file('references_excel', 'references', "assets/references/");
+                if($output['status'] == 'success') {
+                    $res = $this->parse_references($product_id, $output['file']);
+                    $this->session->set_flashdata('success', 'Reference Links successfully uploaded.');
+                    redirect(base_url().'references');
+                } else {
+                    $data['error'] = $output['error'];
+                }
+
+            }
+        }
+        
+        $this->template->write_view('content', 'references/upload_reference', $data);
+        $this->template->render();
+    }
+	
+	 
+    private function parse_references($product_id, $file_name) {
+        $this->load->library('excel');
+		$this->load->model('Inspection_model');
+		$this->load->model('Product_model');
+
+        //read file from path
+        $objPHPExcel = PHPExcel_IOFactory::load($file_name);
+        
+        //get only the Cell Collection
+        $cell_collection = $objPHPExcel->getActiveSheet()->getCellCollection();
+        $arr = $objPHPExcel->getActiveSheet()->toArray(null, true,true,true);
+        
+        $references = array();
+        foreach($arr as $no => $row) {
+            $temp = array();
+            if($no == 1)
+                continue;
+            
+            if(!trim($row['A']))
+                continue;
+            
+			if(!empty(trim($row['C']))){
+				if(trim($row['C']) != 'All')
+				{
+					$inspection_id = $this->Inspection_model->get_inspection_by_name(trim($row['C']));
+					$insp_id = $inspection_id['id'];
+				}
+			}
+            else
+				continue;
+			
+			if(!empty(trim($row['D']))){
+				if(trim($row['D']) != 'All'){
+					$tools = $this->Product_model->get_tool($this->product_id, trim($row['D']));
+					if(!empty($tools))
+						$tool = $row['D'];
+					else
+						continue;
+				}
+			}
+			else
+				continue;
+			//$non_exist = 0;
+			if(!empty(trim($row['E']))){
+				if(trim($row['E']) != 'All'){
+					$suffix = $this->Product_model->get_suffix($this->product_id, trim($row['E']));
+					if(!empty($suffix))
+						$model_suffix = $row['E'];
+					else
+						continue;
+				}
+			}
+			else
+				continue;
+
+			if(count($model_suffix) > 1){
+				$model_suffix = implode(',',$model_suffix);			
+			}
+			
+			$temp['product_id']     = $product_id;
+			$temp['inspection_id']  = $insp_id;
+			$temp['tool']  			= $tool;
+			$temp['model_suffix']  	= $model_suffix;
+            $temp['name']           = $row['B'];
+            $temp['reference_file'] = $row['F'];
+            $temp['reference_url']  = $row['G'];
+            $temp['mandatory']      = $row['H'];	//	0 or 1
+            $temp['created']        = date("Y-m-d H:i:s");
+			
+			
+			/* ";//print_r($row);exit;
+			print_r($temp);
+			exit; */
+			
+			$references[]        = $temp;
+        }
+        //echo "<pre>";print_r($references);
+		
+        $this->load->model('Reference_model');
+        $this->Reference_model->insert_references($references, $product_id);
+        
+        return TRUE;
+    }
+   
 }
