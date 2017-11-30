@@ -755,11 +755,13 @@ class Reports extends Admin_Controller {
 		//print_r($filters);exit;
         if(count($filters) > 1) {
 			$_SESSION['consolidated_report_filters'] = $filters;
+            $model_s = $this->input->post('model_suffix');
+			$data['selected_model'] = $model_s;
             
 			$data['inspections'] = $this->Inspection_model->get_all_inspections_by_product($this->product_id, 0, 1,strtolower($filters['insp-type']));
         
 			$data['audits'] = $this->Audit_model->get_consolidated_report($filters);
-			// echo $this->db->last_query();exit;
+			 // echo $this->db->last_query();exit;
 		}
 		$this->template->write('title', 'OQIS | Consolidated Report for Regular & Interval Inspection');
         $this->template->write_view('content', 'reports/consolidated_report', $data);

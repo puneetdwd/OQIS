@@ -155,6 +155,11 @@
                                             <i class="fa fa-briefcase"></i> Email IDs 
                                         </a>
                                     </li>
+									<li>
+                                        <a href="<?php echo base_url(); ?>holiday_planning" target="_blank">
+                                            <i class="fa fa-briefcase"></i> Holiday Planning
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         <?php } ?>

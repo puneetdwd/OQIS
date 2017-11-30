@@ -107,12 +107,29 @@
 										<div class="col-md-4">
                                             <div class="form-group" id="report-sel-model-error">
                                                 <label class="control-label">Select Model.Suffix:</label>
-                                                        
-                                                <select name="model_suffix" class="form-control select2me"
+                                                <?php	
+														$sel_model_suffix = (!empty($selected_model) ? $selected_model : array(0=>'All')); 
+														//echo "1";print_r($sel_model_suffix);
+												?>        
+                                                <select multiple name="model_suffix[]" class="form-control select2me"
                                                     data-placeholder="Select Model.Suffix" data-error-container="#report-sel-model-error">
-                                                    <option></option>
+													
+                                                     <?php if(empty($this->input->post())){ ?>
+													<option></option>
+													<?php } 
+													else{ ?>
+														<option value="All" <?php if($sel_model_suffix[0] == 'All'){ ?> selected="selected" <?php } ?>>All</option>
+													<?php } ?> 
+													
                                                     <?php foreach($models as $model) { ?>
-                                                        <option value="<?php echo $model['model_suffix']; ?>" <?php if($model['model_suffix'] == $this->input->post('model_suffix')) { ?> selected="selected" <?php } ?>>
+                                                        <option value="<?php echo $model['model_suffix']; ?>" <?php 
+														if(!empty($sel_model_suffix)){	
+																if(in_array($model['model_suffix'], $sel_model_suffix)) { 
+																	?> selected="selected" <?php 
+															}
+														}														
+														?>
+														>
                                                             <?php echo $model['model_suffix']; ?>
                                                         </option>
                                                     <?php } ?>        

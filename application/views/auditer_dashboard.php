@@ -43,6 +43,18 @@
         </div>    
     </div>
     
+	<div class="row dashboard-progress-section">
+        <div class="col-md-12">
+            <div class="mt-element-ribbon bg-grey-steel">
+                <div class="ribbon ribbon-clip ribbon-color-danger">
+                    <div class="ribbon-sub ribbon-clip"></div> <?php echo date('jS M, Y', strtotime($this->session->userdata('dashboard_date'))); ?>'s PROGRESS </div>
+                <div class="ribbon-content text-center">
+                    <img src="<?php echo base_url(); ?>assets/global/img/loading-spinner-grey.gif" alt="" class="loading"> Loading Progress
+                </div>
+            </div>
+        </div>
+    </div>
+	
     <?php if(!empty($on_holds) || !empty($on_going)) { ?>
         <div class="row">
             <div class="col-md-12">
@@ -211,17 +223,7 @@
         </div>
     <?php } ?>
     
-    <div class="row dashboard-progress-section">
-        <div class="col-md-12">
-            <div class="mt-element-ribbon bg-grey-steel">
-                <div class="ribbon ribbon-clip ribbon-color-danger">
-                    <div class="ribbon-sub ribbon-clip"></div> <?php echo date('jS M, Y', strtotime($this->session->userdata('dashboard_date'))); ?>'s PROGRESS </div>
-                <div class="ribbon-content text-center">
-                    <img src="<?php echo base_url(); ?>assets/global/img/loading-spinner-grey.gif" alt="" class="loading"> Loading Progress
-                </div>
-            </div>
-        </div>
-    </div>
+    
     
     
 </div>

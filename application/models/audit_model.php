@@ -402,10 +402,22 @@ class Audit_model extends CI_Model {
             $pass_array[] = $filter['start_range'];
             $pass_array[] = $filter['end_range'];
         }
-        if(!empty($filter['model_suffix'])) {
+        /* if(!empty($filter['model_suffix'])) {
 			 $sql .= " AND a.model_suffix = ? ";
             $pass_array[] = $filter['model_suffix'];
-        }
+        } */
+		if(!empty($filter['model_suffix'])){
+			$model_suffix = implode('", "', $filter['model_suffix']);
+			if(!empty($model_suffix) && $model_suffix != 'All') {
+				$sql .= ' AND  (a.model_suffix IN ( "'.$model_suffix.'" ) OR a.model_suffix IS NULL)';
+			   // $pass_array[] = $model_suffix;
+			}
+			else if($model_suffix == 'All') {
+				$sql .= ' AND (a.model_suffix != (?) OR a.model_suffix IS NULL)';
+				$pass_array[] = $model_suffix;
+			} 
+		}
+		
 		if(!empty($filter['inspection_id'])) {
 			 $sql .= " AND a.inspection_id = ? ";
             $pass_array[] = $filter['inspection_id'];
