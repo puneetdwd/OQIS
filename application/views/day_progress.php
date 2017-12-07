@@ -1,3 +1,17 @@
+<style type="text/css">
+    
+    th, td { white-space: nowrap; }
+    div.dataTables_wrapper {
+        width: 800px;
+        margin: 0 auto;
+    }
+    .fix-height{
+        height: 90px !important;
+    }
+    .fht-table{
+        background: #e9edef;
+    }
+</style>
 <div class="col-md-12">
     <div class="mt-element-ribbon bg-grey-steel">
         
@@ -24,18 +38,18 @@
                 <div class="ribbon-sub ribbon-clip"></div> <?php echo date('jS M, Y', strtotime($this->session->userdata('dashboard_date'))); ?>'s PROGRESS 
             </div>
         <?php } ?>
-        <div class="ribbon-content">
+        <div class="ribbon-content main">
             <?php if(empty($sampling_plan)) {?>
                 No sampling plan added for <?php echo date('jS M, Y', strtotime($this->session->userdata('dashboard_date'))); ?>.
             <?php } else { ?>
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered">
+                <div class="table-responsive ContenedorTabla">
+                    <table class="table table-hover table-bordered fht-table" id="example"">
                         <thead>
                             <tr>
                                 <?php foreach(array_slice($sampling_plan, 0, 1) as $plan) { ?>
                                     <?php foreach($plan as $k => $p) { ?>
                                         <?php if($k <= 5) { ?>
-                                            <th rowspan="2" style="vertical-align: middle;"><?php echo $p; ?></th>
+                                            <th rowspan="2" style="vertical-align: middle;" class="fix-height"><?php echo $p; ?></th>
                                         <?php } else { ?>
                                             <th colspan="3" class="text-center"><?php echo $p; ?></th>
                                         <?php } ?>

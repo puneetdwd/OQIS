@@ -46,6 +46,10 @@
         <link rel="shortcut icon" href="<?php echo base_url(); ?>favicon.ico" /> 
         
         <script src="<?php echo base_url(); ?>assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+
+        <link href="https://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
+        <link href="https://www.jqueryscript.net/demo/jQuery-Plugin-To-Freeze-Table-Columns-Rows-On-Scroll/css/ScrollTabla.css" rel="stylesheet" media="screen" />
+        
     </head>
     <!-- END HEAD -->
 

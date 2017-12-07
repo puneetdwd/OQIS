@@ -416,3 +416,5 @@
         $('.hide-till-load').show();
     });
 </script>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="https://www.jqueryscript.net/demo/jQuery-Plugin-To-Freeze-Table-Columns-Rows-On-Scroll/js/jquery.CongelarFilaColumna.js"></script>

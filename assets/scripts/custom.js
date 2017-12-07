@@ -38,7 +38,9 @@
 	
     var base_url = $('#base_url').val();
     
-    $('.dashboard-progress-section').load(base_url+'dashboard/show_day_progress');
+    $('.dashboard-progress-section').load(base_url+'dashboard/show_day_progress', function(){
+        $("#example").CongelarFilaColumna();
+    });
     
     if($('#existing_checkpoints').length > 0) {
         $('#add-checkpoint-form').submit(function() {
