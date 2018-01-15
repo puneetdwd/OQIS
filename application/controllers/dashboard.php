@@ -85,6 +85,19 @@ class Dashboard extends Admin_Controller {
         
         redirect(base_url());
     }
+
+    public function show_day_progress_initiator() {
+        $data = array();
+        $data['sampling_plan'] = $this->display_day_progress($this->session->userdata('initiator_date'));
+        
+        echo $this->load->view('day_progress_initiator', $data, true);
+    }
+
+    public function set_initiator_date($date) {
+        $this->session->set_userdata('initiator_date', $date);
+        
+        redirect(base_url()."dashboard/initiator");
+    }
     
     public function notification_action($id, $audit_flag = false) {
         if($audit_flag != 'direct') {
@@ -238,6 +251,23 @@ class Dashboard extends Admin_Controller {
         
         return $data;
     }
+
+    public function initiator() {
+        $data = array();
+        //$data = $this->auditer_dashboard();
+
+        if(!$this->session->userdata('initiator_date')){
+
+            $this->session->set_userdata('initiator_date', date('Y-m-d'));
+        }
+
+        $data['date'] = $this->session->userdata('initiator_date');
+        
+        $this->template->write_view('content', 'dashboard/initiator', $data);
+        $this->template->render();
+        
+        return $data;
+    }
     
 	private function get_days_for_range($start_range, $end_range) {
         $days = array();
@@ -252,42 +282,42 @@ class Dashboard extends Admin_Controller {
     }
     private function pending_counts() {
 		$this->load->model('Audit_model');
-		    $start_range = date('Y-m-01');//,time()-60*60*24
-            $end_range = date('Y-m-d',time()-60*60*24);
-           // $inspection_id = $post_data['inspection_id'];
+	    $start_range = date('Y-m-01');//,time()-60*60*24
+        $end_range = date('Y-m-d',time()-60*60*24);
+       // $inspection_id = $post_data['inspection_id'];
 
-            $counts = $this->Audit_model->get_pending_audits_count($start_range, $end_range, $this->product_id);
-            //echo "<pre>";echo $this->db->last_query();exit;
-			//echo 'Counts=><pre>';print_r($counts);
-            $days = $this->get_days_for_range($start_range, $end_range);
-            $days = array_fill_keys(($days), '-');
-            $data['days'] = $days; 
-            
-            $reports = array();
+        $counts = $this->Audit_model->get_pending_audits_count($start_range, $end_range, $this->product_id);
+        //echo "<pre>";echo $this->db->last_query();exit;
+		//echo 'Counts=><pre>';print_r($counts);
+        $days = $this->get_days_for_range($start_range, $end_range);
+        $days = array_fill_keys(($days), '-');
+        $data['days'] = $days; 
+        
+        $reports = array();
+		
+        $totals = array_merge(array('Total' => 'Total'), $days);
+        foreach($counts as $count) {
 			
-            $totals = array_merge(array('Total' => 'Total'), $days);
-            foreach($counts as $count) {
-				
-                if(!isset($reports[$count['inspection_id']])) {
-                    $reports[$count['inspection_id']] = array_merge(array('inspection_name' => $count['inspection_name']), $days);
-                }
-				$pending = $count['samples']-$count['total_audits'];
-                if($count['insp_type'] == 'regular'){
-					$reports[$count['inspection_id']]['insp_type'] = 'Regular';
-				}
-                if($count['insp_type'] == 'interval'){
-					$reports[$count['inspection_id']]['insp_type'] = 'Interval';
-                }
-             
-				$reports[$count['inspection_id']][$count['sampling_date']] = ($pending < 0) ? 0 : $pending;
-                
-                $totals[$count['sampling_date']] += $pending;
+            if(!isset($reports[$count['inspection_id']])) {
+                $reports[$count['inspection_id']] = array_merge(array('inspection_name' => $count['inspection_name']), $days);
             }
+			$pending = $count['samples']-$count['total_audits'];
+            if($count['insp_type'] == 'regular'){
+				$reports[$count['inspection_id']]['insp_type'] = 'Regular';
+			}
+            if($count['insp_type'] == 'interval'){
+				$reports[$count['inspection_id']]['insp_type'] = 'Interval';
+            }
+         
+			$reports[$count['inspection_id']][$count['sampling_date']] = ($pending < 0) ? 0 : $pending;
             
-            //$reports[] = $totals;
-            return $reports;
-            
-            //echo "reports=><pre>";print_r($reports);exit;
+            $totals[$count['sampling_date']] += $pending;
+        }
+        
+        //$reports[] = $totals;
+        return $reports;
+        
+        //echo "reports=><pre>";print_r($reports);exit;
 	}
     private function dashboard() {
         $data = array();

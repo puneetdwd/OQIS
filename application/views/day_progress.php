@@ -2,7 +2,7 @@
     
     th, td { white-space: nowrap; }
     div.dataTables_wrapper {
-        width: 800px;
+        /*width: 800px;*/
         margin: 0 auto;
     }
     .fix-height{

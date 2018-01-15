@@ -39,7 +39,11 @@
     var base_url = $('#base_url').val();
     
     $('.dashboard-progress-section').load(base_url+'dashboard/show_day_progress', function(){
-        $("#example").CongelarFilaColumna();
+        $("#example").CongelarFilaColumna({Columnas:1, coloreacelda: true});
+    });
+
+    $('.initiator-progress-section').load(base_url+'dashboard/show_day_progress_initiator', function(){
+        $("#example").CongelarFilaColumna({Columnas:1, coloreacelda: true});
     });
     
     if($('#existing_checkpoints').length > 0) {
@@ -893,6 +897,15 @@
         // }
         
         window.location.href = base_url+'dashboard/set_dashboard_date/'+$(this).find('input').val();
+    });
+
+    $('#initiator-date').on('changeDate', function() {
+        // if($('#first-time').val() == 1) {
+            // $('#first-time').val(0);
+            // return false;
+        // }
+        
+        window.location.href = base_url+'dashboard/set_initiator_date/'+$(this).find('input').val();
     });
     
     $('#submit-checklist').click(function(){
